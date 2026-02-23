@@ -1,6 +1,10 @@
 # affirmation_agent.py
-# A LangGraph-based agent that sends personalized affirmations via Pushover
-# at different times of day, with logging to prevent repetition.
+# A LangGraph agent that sends personalized affirmations via Pushover.
+# The agent uses multiple tools to gather context before composing each message:
+#   - read_sent_log     : check recent messages to avoid repetition
+#   - get_weather       : fetch current weather to personalize the tone
+#   - search_quote      : find a relevant quote to weave in
+#   - send_push_notification : deliver the final affirmation
 
 from typing import Annotated, TypedDict
 from pathlib import Path
@@ -26,12 +30,11 @@ load_dotenv()
 # ─────────────────────────────────────────────────────────────────────────────
 
 LOG_FILE = Path("sent_log.txt")
-
-# Maximum number of entries to keep in the log file to prevent unbounded growth
 MAX_LOG_ENTRIES = 50
-
-# Number of recent entries to inject into the prompt for deduplication
 RECENT_FOR_PROMPT = 10
+
+# Location used for weather lookups — change to your city
+WEATHER_LOCATION = "Seattle"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -39,61 +42,50 @@ RECENT_FOR_PROMPT = 10
 # ─────────────────────────────────────────────────────────────────────────────
 
 PERSONAL_CONTEXT = """
-PERSONAL SITUATION (weave this naturally into every message — do not state it bluntly):
-- The user is actively job hunting and feeling uncertain about their career path
-- The user recently went through a breakup and is emotionally recovering
-- Both things are happening at the same time, creating an overall sense of being at a low point
-- Key themes to reinforce across all time periods:
-    * Pain is temporary — this difficult season will pass
-    * Living fully in the present moment is the antidote to rumination
-    * Do not let imagined versions of the past ("what could have been") or
-      the future ("what if things never get better") hijack the present
+PERSONAL SITUATION (weave this naturally — do not state it bluntly):
+- Actively job hunting, feeling uncertain about career path
+- Recently went through a breakup, emotionally recovering
+- Both happening simultaneously — overall sense of being at a low point
+- Key themes to reinforce:
+    * Pain is temporary — this season will pass
+    * Living in the present moment is the antidote to rumination
+    * Do not let imagined versions of the past or future hijack the present
     * Self-worth is not determined by job titles or relationship status
-- Tone guidance: be warm and real — acknowledge difficulty briefly, then
-  pivot toward strength, presence, and quiet hope. Never use toxic positivity.
+- Tone: warm and real — acknowledge difficulty briefly, pivot to strength and hope.
+  Never use toxic positivity.
 
 MOVEMENT REMINDER:
-- Every message must include a brief, caring nudge to get up, stretch, or move
-- Keep it to one sentence, woven naturally into the message or added at the end
-- Make it feel like advice from a friend, not a fitness coach
-- Vary the wording every time (e.g., do not always say "take a stretch break")
+- Every message must include a brief nudge to get up, stretch, or move
+- One sentence only, woven naturally into the message
+- Vary the wording every time
 """
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Log management
+# Log helpers — used internally and exposed as a tool
 # ─────────────────────────────────────────────────────────────────────────────
 
-def read_recent_logs(n: int = RECENT_FOR_PROMPT) -> list[str]:
-    """
-    Read the most recent n entries from the log file.
-    Each entry format: [2026-02-22 09:00 PST | morning] message text...
-    Returns an empty list if the log file does not exist yet.
-    """
+def _read_recent_log_entries(n: int = RECENT_FOR_PROMPT) -> list[str]:
+    """Internal helper: return the most recent n log entries as a list."""
     if not LOG_FILE.exists():
         return []
-
     raw = LOG_FILE.read_text(encoding="utf-8").strip().splitlines()
     entries = [line for line in raw if line.strip() and not line.startswith("─")]
     return entries[-n:]
 
 
 def append_log(affirmation_text: str, ctx: dict) -> None:
-    """
-    Append a new affirmation entry to the log file.
-    Enforces MAX_LOG_ENTRIES to keep the file from growing indefinitely.
-    """
+    """Append a new entry to sent_log.txt, trimming to MAX_LOG_ENTRIES."""
     pst = pytz.timezone("America/Los_Angeles")
     timestamp = datetime.now(pst).strftime("%Y-%m-%d %H:%M PST")
     new_entry = f"[{timestamp} | {ctx['period']}] {affirmation_text.strip()}"
 
+    existing = []
     if LOG_FILE.exists():
         existing = [
             line for line in LOG_FILE.read_text(encoding="utf-8").strip().splitlines()
             if line.strip() and not line.startswith("─")
         ]
-    else:
-        existing = []
 
     existing.append(new_entry)
     if len(existing) > MAX_LOG_ENTRIES:
@@ -101,23 +93,22 @@ def append_log(affirmation_text: str, ctx: dict) -> None:
 
     separator = "\n─────────────────────────────────────────\n"
     LOG_FILE.write_text(separator.join(existing) + "\n", encoding="utf-8")
-    print(f"Log updated ({len(existing)} total entries): {new_entry[:80]}...")
+    print(f"Log updated ({len(existing)} entries): {new_entry[:80]}...")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Time context — determines the mood and angle of the affirmation
+# Time context
 # ─────────────────────────────────────────────────────────────────────────────
 
 def get_time_context() -> dict | None:
     """
-    Return a dictionary describing the current PST time period.
-    Returns None if outside the active window (9AM-9PM PST/PDT).
-    Slot label is unique per 30-minute window per day, used as a deduplication seed.
+    Return config for the current PST time period, or None if outside
+    the active window (9AM-9PM PST/PDT).
 
     Time windows:
-      Morning   : 9 AM  - 1 PM  (hour 9-12)
-      Afternoon : 1 PM  - 7 PM  (hour 13-18)
-      Evening   : 7 PM  - 9 PM  (hour 19-20)
+      Morning   : 9 AM  - 1 PM  (hour 9-13)
+      Afternoon : 1 PM  - 6 PM  (hour 13-18)
+      Evening   : 6 PM  - 10 PM  (hour 18-22)
     """
     pst = pytz.timezone("America/Los_Angeles")
     now = datetime.now(pst)
@@ -126,78 +117,48 @@ def get_time_context() -> dict | None:
     date_str = now.strftime("%Y-%m-%d")
 
     if 9 <= hour < 13:
-        slot_label = f"{date_str}-morning-slot{hour * 2 + slot}"
         return {
             "period": "morning",
             "emoji": "🌅",
-            "slot_label": slot_label,
+            "slot_label": f"{date_str}-morning-slot{hour * 2 + slot}",
             "tone": "warm, energizing, gently hopeful",
             "context": """It is morning (9 AM - 1 PM PST).
-The user may struggle to find motivation to start the day, weighed down by the
-emotional heaviness of job searching and processing a breakup.
-
-Your affirmation should:
+The user may struggle to find motivation to start the day, weighed down by
+job searching and a recent breakup.
 - Make getting up feel genuinely worthwhile
-- Remind them that each morning is a real fresh slate, not just a cliche
-- Ground them in THIS specific morning, not yesterday's rejection or tomorrow's worry
-- Feel like a trusted friend saying "today is worth showing up for"
-
-Angle on personal situation:
-- Job hunt: one more day of effort compounds quietly, the right opportunity
-  is built toward, not stumbled upon randomly
-- Breakup: mornings are often the hardest emotionally; validate this gently,
-  then redirect toward the freedom and possibility of a day that belongs only to them""",
+- Ground them in THIS morning, not yesterday's rejection or tomorrow's worry
+- Job hunt angle: one more day of effort compounds quietly
+- Breakup angle: mornings are hardest; redirect to the freedom of a day that is theirs alone""",
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 13 <= hour < 19:
-        slot_label = f"{date_str}-afternoon-slot{hour * 2 + slot}"
+    elif 13 <= hour < 18:
         return {
             "period": "afternoon",
             "emoji": "☀️",
-            "slot_label": slot_label,
+            "slot_label": f"{date_str}-afternoon-slot{hour * 2 + slot}",
             "tone": "re-energizing, focused, steady and grounded",
-            "context": """It is afternoon (1 PM - 7 PM PST).
-The user has been working through job applications or studying all morning
-and is likely hitting a mental and emotional wall, the classic afternoon slump.
-
-Your affirmation should:
-- Acknowledge that the middle of any hard stretch is the toughest part
-- Reignite their sense of self-worth that is independent of external outcomes
-- Bring them back to the present hour, this effort, this moment, this version
-  of themselves that keeps going despite everything
-- Be grounded and real, never artificially cheerful
-
-Angle on personal situation:
-- Job hunt: progress is not always visible day-to-day, but it is real and cumulative.
-  Remind them that persistence through the afternoon of hard seasons is what matters.
-- Breakup: afternoons can bring unexpected waves of missing someone; redirect
-  toward the quiet strength they are actively building right now""",
+            "context": """It is afternoon (1 PM - 6 PM PST).
+The user has been grinding through applications all morning and is hitting a wall.
+- Acknowledge that the middle of hard stretches is the toughest part
+- Reignite self-worth independent of external outcomes
+- Job hunt angle: progress is invisible day-to-day but real and cumulative
+- Breakup angle: redirect afternoon waves of missing someone toward quiet strength""",
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 19 <= hour < 21:
-        slot_label = f"{date_str}-evening-slot{hour * 2 + slot}"
+    elif 18 <= hour <= 22:
         return {
             "period": "evening",
             "emoji": "🌙",
-            "slot_label": slot_label,
+            "slot_label": f"{date_str}-evening-slot{hour * 2 + slot}",
             "tone": "calming, compassionate, peaceful",
-            "context": """It is evening (7 PM - 9 PM PST).
-The user is winding down. After a full day of effort and emotional weight,
-they need permission to truly rest, not to solve anything else tonight.
-
-Your affirmation should:
-- Help them gently set down the weight of the day
-- Remind them that showing up today was enough, it always counts
-- Encourage self-compassion: they are far more than their job title or relationship status
-- Prime them for restful sleep, not anxious rumination about what comes next
-- Make solitude feel like reclaimed space, not loneliness
-
-Angle on personal situation:
-- Job hunt: overnight, momentum continues even when they rest. Let go of today's outcomes.
-- Breakup: evenings can feel the loneliest; remind them that solitude and loneliness
-  are genuinely different, this quiet time is theirs to reclaim and own""",
+            "context": """It is evening (6 PM - 10 PM PST).
+The user is winding down and needs permission to truly rest.
+- Help them set down the weight of the day
+- Showing up today was enough — it always counts
+- Job hunt angle: overnight, momentum continues even while they rest
+- Breakup angle: solitude and loneliness are different — this quiet is theirs to reclaim""",
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
@@ -205,134 +166,189 @@ Angle on personal situation:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Language rotation — alternates English and Chinese per slot
+# Language rotation
 # ─────────────────────────────────────────────────────────────────────────────
 
 def get_language(slot_label: str) -> dict:
-    """
-    Even slot numbers -> English, odd slot numbers -> Chinese.
-    Ensures strict alternation across consecutive 30-minute windows.
-    """
+    """Even slot numbers -> English, odd -> Chinese."""
     slot_num = int(slot_label.split("slot")[-1])
-
     if slot_num % 2 == 0:
         return {
             "lang": "English",
             "instruction": "Write the entire affirmation in English.",
-            "movement_hint": (
-                "End with one gentle, varied sentence encouraging the user "
-                "to get up and move their body, written in English."
-            ),
+            "movement_hint": "End with one gentle sentence in English encouraging movement.",
         }
     else:
         return {
             "lang": "Chinese",
-            "instruction": (
-                "用中文写作。语言要自然流畅，像一个真实的朋友说话，"
-                "而不是机器翻译或正式书面语。"
-            ),
-            "movement_hint": (
-                "最后用一句话提醒用户起来活动一下身体。"
-                "每次措辞都要不同，不要总用同样的句式。"
-            ),
+            "instruction": "用中文写作，语言自然流畅，像真实朋友说话，不像机器翻译。",
+            "movement_hint": "最后用一句话提醒用户起来活动，每次措辞不同。",
         }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Deduplication — inject recent log entries into the prompt
-# ─────────────────────────────────────────────────────────────────────────────
-
-def build_no_repeat_section() -> str:
-    """
-    Format recent log entries as a deduplication constraint for the system prompt.
-    Returns an empty string on the first run when no log exists yet.
-    """
-    recent = read_recent_logs(RECENT_FOR_PROMPT)
-    if not recent:
-        return ""
-
-    formatted = "\n".join(f"  - {entry}" for entry in recent)
-    return f"""
-RECENT MESSAGES - DO NOT REPEAT any of the following:
-{formatted}
-
-Your new affirmation must differ from ALL of the above in:
-- Opening words and sentence structure
-- The core image, metaphor, or angle used
-- The specific take on job searching or emotional recovery
-- The wording of the movement reminder
-"""
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# System prompt builder
+# System prompt
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_system_prompt(ctx: dict) -> str:
-    """
-    Assemble the full system prompt from time period, language,
-    personal context, and deduplication history.
-    """
+    """Build the full system prompt for the agent."""
     lang = get_language(ctx["slot_label"])
-    no_repeat_section = build_no_repeat_section()
 
     return f"""You are a deeply caring personal wellness companion — warm, wise, and real.
-You send short, powerful affirmations that meet the user exactly where they are,
-without being preachy or using hollow positivity.
+Your job is to send one personalized affirmation via push notification.
 
 CURRENT TIME : {ctx['now_str']}
 PERIOD       : {ctx['emoji']} {ctx['period'].upper()}
 SLOT ID      : {ctx['slot_label']}
-               (Use this as a mental uniqueness seed — each slot is a different message)
 
 LANGUAGE THIS ROUND: {lang['lang']}
 {lang['instruction']}
 
 TONE: {ctx['tone']}
 
-TIME-SPECIFIC CONTEXT AND ANGLE:
+TIME-SPECIFIC CONTEXT:
 {ctx['context']}
 
 {PERSONAL_CONTEXT}
 
-{no_repeat_section}
+YOU HAVE FOUR TOOLS. Use them in this order before sending:
 
-FORMATTING RULES — follow every rule exactly:
-1.  Begin the message with the {ctx['emoji']} emoji.
-2.  Main affirmation body: 2-4 sentences, under 90 words total.
-3.  Weave present-moment awareness in naturally — the antidote to pain is HERE, NOW.
+STEP 1 — call read_sent_log
+  Read the recent message history to understand what has already been sent.
+  Use this to avoid repeating themes, openings, metaphors, or movement reminders.
+
+STEP 2 — call get_weather
+  Get the current weather in {WEATHER_LOCATION}.
+  Weave the weather naturally into the affirmation if it fits — e.g. a rainy morning
+  might inspire a message about finding stillness; bright sun might energize.
+  Do not force it if the connection feels unnatural.
+
+STEP 3 — call search_quote
+  Find one short, relevant quote that resonates with the time period and personal situation.
+  The quote should feel real and specific, not generic.
+  Weave it naturally into the affirmation or append it as a closing line.
+
+STEP 4 — call send_push_notification
+  Compose and send the final affirmation using everything gathered above.
+
+FORMATTING RULES for the final message:
+1.  Begin with the {ctx['emoji']} emoji.
+2.  2-4 sentences, under 100 words total.
+3.  Weave present-moment awareness naturally — the antidote to pain is HERE, NOW.
 4.  {lang['movement_hint']}
-5.  BANNED words and phrases (too generic or overused):
-      English: "journey", "embrace", "thrive", "hustle", "grind",
-               "amazing", "awesome", "you've got this"
-      Chinese: "你值得更好的", "加油", "相信自己", "不要放弃"
-6.  Do NOT open with "I am" (English) or "我是" (Chinese).
-7.  Do NOT ask the user any questions.
-8.  After writing the affirmation, IMMEDIATELY call send_push_notification
-    to deliver it. Do not wait for confirmation.
+5.  BANNED words: "journey", "embrace", "thrive", "hustle", "grind", "amazing",
+    "awesome", "you've got this", "你值得更好的", "加油", "相信自己", "不要放弃"
+6.  Do NOT open with "I am" or "我是".
+7.  Do NOT ask questions.
 """
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Pushover notification tool
+# Tools
 # ─────────────────────────────────────────────────────────────────────────────
 
 @tool
+def read_sent_log() -> str:
+    """
+    Read the most recent affirmations that have already been sent.
+    Use this to avoid repeating themes, openings, or movement reminder phrasing.
+    Returns the last 10 entries from the log, or a message if no log exists yet.
+    """
+    entries = _read_recent_log_entries(10)
+    if not entries:
+        return "No previous affirmations found. This is the first one — be creative!"
+    formatted = "\n".join(f"  {i+1}. {e}" for i, e in enumerate(entries))
+    return f"Recent affirmations sent (most recent last):\n{formatted}"
+
+
+@tool
+def get_weather() -> str:
+    """
+    Get the current weather conditions in the user's location (Seattle).
+    Use this to personalize the affirmation tone — e.g. rainy days might call
+    for a cozier, more introspective message; sunny days might be more energizing.
+    Returns a short weather summary string.
+    """
+    try:
+        # wttr.in is a free weather service that requires no API key
+        # format=j1 returns JSON; we extract the key fields we need
+        response = requests.get(
+            f"https://wttr.in/{WEATHER_LOCATION}?format=j1",
+            timeout=5
+        )
+        data = response.json()
+        current = data["current_condition"][0]
+
+        temp_f = current["temp_F"]
+        feels_like_f = current["FeelsLikeF"]
+        description = current["weatherDesc"][0]["value"]
+        humidity = current["humidity"]
+
+        return (
+            f"Current weather in {WEATHER_LOCATION}: {description}, "
+            f"{temp_f}°F (feels like {feels_like_f}°F), humidity {humidity}%."
+        )
+    except Exception as e:
+        return f"Weather unavailable ({e}). Compose the affirmation without weather context."
+
+
+@tool
+def search_quote(theme: str) -> str:
+    """
+    Search for a short, meaningful quote that fits the given theme.
+    Use themes like 'resilience', 'present moment', 'rest', 'persistence',
+    'healing', 'self-worth', 'new beginnings', etc.
+    Returns one quote with its author.
+
+    Args:
+        theme: A word or short phrase describing the emotional theme to search for.
+    """
+    try:
+        # zenquotes.io is a free quotes API requiring no key
+        # /api/quotes returns a list; we pick the first one that fits
+        response = requests.get(
+            "https://zenquotes.io/api/quotes",
+            timeout=5
+        )
+        quotes = response.json()
+
+        # Filter for quotes that contain keywords related to the theme
+        theme_words = theme.lower().split()
+        matching = [
+            q for q in quotes
+            if any(word in q["q"].lower() for word in theme_words)
+        ]
+
+        # Fall back to first quote if no keyword match found
+        chosen = matching[0] if matching else quotes[0]
+        return f'"{chosen["q"]}" — {chosen["a"]}'
+
+    except Exception as e:
+        return f"Quote unavailable ({e}). Compose the affirmation without a quote."
+
+
+@tool
 def send_push_notification(text: str) -> str:
-    """Send an affirmation as a push notification to the user's phone."""
+    """
+    Send the final affirmation as a push notification to the user's phone.
+    Call this LAST, after reading the log, checking weather, and finding a quote.
+
+    Args:
+        text: The complete, final affirmation message to send.
+    """
     response = requests.post(
         "https://api.pushover.net/1/messages.json",
         data={
             "token": os.getenv("PUSHOVER_TOKEN"),
             "user": os.getenv("PUSHOVER_USER"),
             "message": text,
-            "title": "Your Affirmation ✨",
+            "title": "The Now ✨",
         },
     )
     return f"Notification sent (HTTP {response.status_code})"
 
 
-tools = [send_push_notification]
+tools = [read_sent_log, get_weather, search_quote, send_push_notification]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -343,13 +359,12 @@ class State(TypedDict):
     messages: Annotated[list, add_messages]
 
 
-# temperature=1.0 maximizes variety across repeated calls with similar prompts
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=1.0)
 llm_with_tools = llm.bind_tools(tools)
 
 
 def chatbot(state: State) -> dict:
-    """Core agent node: call the LLM with the current message history."""
+    """Core agent node: LLM decides which tool to call next, or finishes."""
     return {"messages": [llm_with_tools.invoke(state["messages"])]}
 
 
@@ -359,27 +374,22 @@ graph_builder.add_node("tools", ToolNode(tools=tools))
 
 graph_builder.add_edge(START, "chatbot")
 graph_builder.add_conditional_edges("chatbot", tools_condition)
-graph_builder.add_edge("tools", END)  # Exit after tool call — no looping
+# Loop back to chatbot after each tool call so the LLM can decide the next step.
+# This is what makes it a real agent — it can call multiple tools in sequence.
+graph_builder.add_edge("tools", "chatbot")
 
 graph = graph_builder.compile()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Text extraction helper
+# Text extraction — reads from send_push_notification tool call args
 # ─────────────────────────────────────────────────────────────────────────────
 
 def extract_affirmation_text(result: dict) -> str:
     """
-    Extract the affirmation text from the graph result using two strategies.
-
-    Strategy 1 (preferred): Read the 'text' argument passed to the
-    send_push_notification tool call. Most reliable because the LLM often
-    skips AIMessage.content and goes straight to calling the tool.
-
-    Strategy 2 (fallback): Look for plain text content in any AIMessage,
-    which covers cases where the LLM outputs text before calling the tool.
+    Extract the final affirmation text from the send_push_notification tool call.
+    The LLM puts the message text in tool_call args, not in AIMessage.content.
     """
-    # Strategy 1: extract from tool_calls arguments in AIMessage
     for msg in result["messages"]:
         if not isinstance(msg, AIMessage):
             continue
@@ -389,24 +399,7 @@ def extract_affirmation_text(result: dict) -> str:
             if tc.get("name") == "send_push_notification":
                 text = tc.get("args", {}).get("text", "").strip()
                 if text:
-                    print("Extracted affirmation text from tool_call args.")
                     return text
-
-    # Strategy 2: fallback to plain text content in AIMessage
-    for msg in reversed(result["messages"]):
-        if not isinstance(msg, AIMessage):
-            continue
-        if isinstance(msg.content, str) and msg.content.strip():
-            return msg.content.strip()
-        if isinstance(msg.content, list):
-            text_parts = [
-                block["text"]
-                for block in msg.content
-                if isinstance(block, dict) and block.get("type") == "text"
-            ]
-            if text_parts:
-                return " ".join(text_parts).strip()
-
     return ""
 
 
@@ -418,11 +411,10 @@ if __name__ == "__main__":
     ctx = get_time_context()
 
     if ctx is None:
-        # Safety net for DST edge cases — the cron schedule already filters time windows
-        print("Outside active hours (9 AM - 9 PM PST). Nothing to send. Exiting.")
+        print("Outside active hours (9 AM - 10 PM PST). Nothing to send. Exiting.")
         exit(0)
 
-    print(f"[{ctx['now_str']}] Generating {ctx['period']} affirmation...")
+    print(f"[{ctx['now_str']}] Starting {ctx['period']} affirmation agent...")
 
     result = graph.invoke(
         {
@@ -433,11 +425,11 @@ if __name__ == "__main__":
         }
     )
 
-    # Extract the generated text and persist it to the log
+    # Log the final affirmation that was sent
     affirmation_text = extract_affirmation_text(result)
 
     if affirmation_text:
         append_log(affirmation_text, ctx)
         print("Done. Affirmation sent and logged.")
     else:
-        print("Warning: affirmation text could not be extracted for logging.")
+        print("Warning: could not extract affirmation text for logging.")

@@ -29,8 +29,8 @@ on:
     # The Python script's get_time_context() uses pytz to detect the real
     # local time and exits cleanly if triggered outside 9 AM–9 PM PST/PDT,
     # so no change to the cron schedule is needed for DST.
-    - cron: '0,30 17-23 * * *'
-    - cron: '0,30 0-5 * * *'
+    - cron: "0,30 17-23 * * *"
+    - cron: "0,30 0-5 * * *"
 
 jobs:
   send-affirmation:
@@ -52,7 +52,7 @@ jobs:
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       # ── 3. Cache pip dependencies ─────────────────────────────────────────
       # Cache key includes the hash of requirements.txt so the cache is
@@ -75,7 +75,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
-          PUSHOVER_USER:  ${{ secrets.PUSHOVER_USER }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
         run: python affirmation_agent.py
 
       # ── 6. Commit the updated log back to the repository ─────────────────
@@ -87,7 +87,8 @@ jobs:
           git config user.name  "affirmation-bot"
           git config user.email "affirmation-bot@users.noreply.github.com"
 
-          if git diff --quiet sent_log.txt; then
+          # Use git status instead of git diff to handle both new and modified files
+          if [ -z "$(git status --porcelain sent_log.txt)" ]; then
             echo "sent_log.txt unchanged — nothing to commit."
           else
             git add sent_log.txt

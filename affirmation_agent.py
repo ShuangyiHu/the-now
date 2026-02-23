@@ -1,6 +1,6 @@
 # affirmation_agent.py
 # A LangGraph-based agent that sends personalized affirmations via Pushover,
-# each accompanied by a DALL-E 2 generated image matching the mood and time of day.
+# each accompanied by a DALL-E 3 generated image matching the mood and time of day.
 
 from typing import Annotated, TypedDict
 from pathlib import Path
@@ -116,7 +116,7 @@ def append_log(affirmation_text: str, ctx: dict) -> None:
 def get_time_context() -> dict | None:
     """
     Return a dictionary describing the current PST time period.
-    Returns None if outside the active window (9AM-10PM PST/PDT).
+    Returns None if outside the active window (9AM-9PM PST/PDT).
     Slot label is unique per 30-minute window per day, used as a deduplication seed.
     """
     pst = pytz.timezone("America/Los_Angeles")
@@ -155,7 +155,7 @@ Angle on personal situation:
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 12 <= hour < 19:
+    elif 12 <= hour < 18:
         slot_label = f"{date_str}-afternoon-slot{hour * 2 + slot}"
         return {
             "period": "afternoon",
@@ -187,7 +187,7 @@ Angle on personal situation:
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 19 <= hour < 22:
+    elif 18 <= hour < 21:
         slot_label = f"{date_str}-evening-slot{hour * 2 + slot}"
         return {
             "period": "evening",
@@ -337,11 +337,11 @@ FORMATTING RULES — follow every rule exactly:
 
 def build_image_prompt(affirmation_text: str, ctx: dict) -> str:
     """
-    Build a DALL-E 2 prompt that visually reflects both the affirmation content
+    Build a DALL-E 3 prompt that visually reflects both the affirmation content
     and the mood of the current time period.
 
     The prompt deliberately avoids asking DALL-E to render any text, since
-    DALL-E 2 handles embedded text poorly. The image is purely visual.
+    DALL-E 3 handles embedded text poorly. The image is purely visual.
     """
     return (
         f"Create a beautiful, emotionally resonant illustration that captures "
@@ -356,7 +356,7 @@ def build_image_prompt(affirmation_text: str, ctx: dict) -> str:
 
 def generate_image(affirmation_text: str, ctx: dict) -> bytes | None:
     """
-    Call the DALL-E 2 API to generate an image for the affirmation.
+    Call the DALL-E 3 API to generate an image for the affirmation.
     Returns raw PNG bytes, or None if generation fails.
     Images are returned as base64 (response_format='b64_json') to avoid
     a second HTTP request to download from a temporary URL.
@@ -396,7 +396,7 @@ def send_push_notification(text: str) -> str:
             "token": os.getenv("PUSHOVER_TOKEN"),
             "user": os.getenv("PUSHOVER_USER"),
             "message": text,
-            "title": "The Now ✨",
+            "title": "Your Affirmation ✨",
         },
     )
     return f"Text notification sent (HTTP {response.status_code})"
@@ -467,17 +467,38 @@ graph = graph_builder.compile()
 
 def extract_affirmation_text(result: dict) -> str:
     """
-    Walk the result message list in reverse to find the last AIMessage
-    with actual text content (not just a tool_call block).
-    Handles both string and list-of-blocks content formats.
+    Extract the affirmation text from the graph result using two strategies:
+
+    Strategy 1 (preferred): Read the 'text' argument passed to the
+    send_push_notification tool call. This is the most reliable source because
+    the LLM often skips putting text in AIMessage.content and goes straight
+    to calling the tool.
+
+    Strategy 2 (fallback): Look for plain text content in any AIMessage,
+    which covers cases where the LLM outputs text before calling the tool.
     """
+    import json
+
+    # Strategy 1: extract from tool_calls arguments in AIMessage
+    for msg in result["messages"]:
+        if not isinstance(msg, AIMessage):
+            continue
+        if not hasattr(msg, "tool_calls") or not msg.tool_calls:
+            continue
+        for tc in msg.tool_calls:
+            if tc.get("name") == "send_push_notification":
+                args = tc.get("args", {})
+                text = args.get("text", "").strip()
+                if text:
+                    print("Extracted affirmation text from tool_call args.")
+                    return text
+
+    # Strategy 2: fallback to plain text content in AIMessage
     for msg in reversed(result["messages"]):
         if not isinstance(msg, AIMessage):
             continue
-
         if isinstance(msg.content, str) and msg.content.strip():
             return msg.content.strip()
-
         if isinstance(msg.content, list):
             text_parts = [
                 block["text"]

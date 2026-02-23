@@ -11,7 +11,7 @@ import requests
 import os
 
 from dotenv import load_dotenv
-from langchain.agents import Tool
+from langchain_core.tools import tool
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
@@ -330,8 +330,9 @@ FORMATTING RULES — follow every rule exactly:
 # Pushover notification tool
 # ─────────────────────────────────────────────────────────────────────────────
 
-def push(text: str) -> str:
-    """Send a push notification to the user via the Pushover API."""
+@tool
+def send_push_notification(text: str) -> str:
+    """Send an affirmation as a push notification to the user's phone."""
     response = requests.post(
         "https://api.pushover.net/1/messages.json",
         data={
@@ -343,15 +344,7 @@ def push(text: str) -> str:
     )
     return f"Notification sent (HTTP {response.status_code})"
 
-
-tool_push = Tool(
-    name="send_push_notification",
-    func=push,
-    description="Send an affirmation as a push notification to the user's phone.",
-)
-
-tools = [tool_push]
-
+tools = [send_push_notification]
 
 # ─────────────────────────────────────────────────────────────────────────────
 # LangGraph setup

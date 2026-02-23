@@ -1,18 +1,16 @@
 # affirmation_agent.py
-# A LangGraph-based agent that sends personalized affirmations via Pushover,
-# each accompanied by a DALL-E 3 generated image matching the mood and time of day.
+# A LangGraph-based agent that sends personalized affirmations via Pushover
+# at different times of day, with logging to prevent repetition.
 
 from typing import Annotated, TypedDict
 from pathlib import Path
 from datetime import datetime
-import base64
 
 import pytz
 import requests
 import os
 
 from dotenv import load_dotenv
-from openai import OpenAI
 from langchain_core.tools import tool
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
@@ -34,9 +32,6 @@ MAX_LOG_ENTRIES = 50
 
 # Number of recent entries to inject into the prompt for deduplication
 RECENT_FOR_PROMPT = 10
-
-# Shared OpenAI client used for both chat and image generation
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -72,7 +67,7 @@ MOVEMENT REMINDER:
 def read_recent_logs(n: int = RECENT_FOR_PROMPT) -> list[str]:
     """
     Read the most recent n entries from the log file.
-    Each entry format: [2026-02-22 09:00 PST | morning] 🌅 message text...
+    Each entry format: [2026-02-22 09:00 PST | morning] message text...
     Returns an empty list if the log file does not exist yet.
     """
     if not LOG_FILE.exists():
@@ -116,8 +111,13 @@ def append_log(affirmation_text: str, ctx: dict) -> None:
 def get_time_context() -> dict | None:
     """
     Return a dictionary describing the current PST time period.
-    Returns None if outside the active window (9AM-10PM PST/PDT).
+    Returns None if outside the active window (9AM-9PM PST/PDT).
     Slot label is unique per 30-minute window per day, used as a deduplication seed.
+
+    Time windows:
+      Morning   : 9 AM  - 1 PM  (hour 9-12)
+      Afternoon : 1 PM  - 7 PM  (hour 13-18)
+      Evening   : 7 PM  - 9 PM  (hour 19-20)
     """
     pst = pytz.timezone("America/Los_Angeles")
     now = datetime.now(pst)
@@ -125,19 +125,14 @@ def get_time_context() -> dict | None:
     slot = now.minute // 30
     date_str = now.strftime("%Y-%m-%d")
 
-    if 9 <= hour < 12:
+    if 9 <= hour < 13:
         slot_label = f"{date_str}-morning-slot{hour * 2 + slot}"
         return {
             "period": "morning",
             "emoji": "🌅",
             "slot_label": slot_label,
             "tone": "warm, energizing, gently hopeful",
-            "image_style": (
-                "soft golden morning light, warm sunrise colors, "
-                "gentle optimism, watercolor or impressionist style, "
-                "nature scenes like dew on leaves or a quiet window with sunlight"
-            ),
-            "context": """It is morning (9 AM - 12 PM PST).
+            "context": """It is morning (9 AM - 1 PM PST).
 The user may struggle to find motivation to start the day, weighed down by the
 emotional heaviness of job searching and processing a breakup.
 
@@ -155,20 +150,14 @@ Angle on personal situation:
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 12 <= hour < 19:
+    elif 13 <= hour < 19:
         slot_label = f"{date_str}-afternoon-slot{hour * 2 + slot}"
         return {
             "period": "afternoon",
             "emoji": "☀️",
             "slot_label": slot_label,
             "tone": "re-energizing, focused, steady and grounded",
-            "image_style": (
-                "bright midday light, vivid but grounded colors, "
-                "energy and focus, bold painterly style, "
-                "scenes of quiet determination like a lone tree in full sun "
-                "or a clear open road or a person walking forward"
-            ),
-            "context": """It is afternoon (12 PM - 6 PM PST).
+            "context": """It is afternoon (1 PM - 7 PM PST).
 The user has been working through job applications or studying all morning
 and is likely hitting a mental and emotional wall, the classic afternoon slump.
 
@@ -187,21 +176,14 @@ Angle on personal situation:
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 18 <= hour < 23:
+    elif 19 <= hour < 21:
         slot_label = f"{date_str}-evening-slot{hour * 2 + slot}"
         return {
             "period": "evening",
             "emoji": "🌙",
             "slot_label": slot_label,
             "tone": "calming, compassionate, peaceful",
-            "image_style": (
-                "soft twilight or moonlit atmosphere, cool blues and purples, "
-                "gentle warm candlelight accents, peaceful and serene, "
-                "impressionist or dreamy digital art style, "
-                "scenes like a quiet starry sky, a candle by a window, "
-                "or calm still water reflecting moonlight"
-            ),
-            "context": """It is evening (6 PM - 9 PM PST).
+            "context": """It is evening (7 PM - 9 PM PST).
 The user is winding down. After a full day of effort and emotional weight,
 they need permission to truly rest, not to solve anything else tonight.
 
@@ -332,60 +314,7 @@ FORMATTING RULES — follow every rule exactly:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Image generation — DALL-E 3
-# ─────────────────────────────────────────────────────────────────────────────
-
-def build_image_prompt(affirmation_text: str, ctx: dict) -> str:
-    """
-    Build a DALL-E 3 prompt that visually reflects both the affirmation content
-    and the mood of the current time period.
-
-    The prompt deliberately avoids asking DALL-E to render any text, since
-    DALL-E 3 handles embedded text poorly. The image is purely visual.
-    """
-    return (
-        f"Create a beautiful, emotionally resonant illustration that captures "
-        f"the feeling of this affirmation: '{affirmation_text}'. "
-        f"Visual style: {ctx['image_style']}. "
-        f"The image should feel {ctx['tone']}. "
-        f"No text, words, letters, or numbers anywhere in the image. "
-        f"No people's faces — use nature, light, abstract forms, or atmospheric scenes. "
-        f"Aspect ratio: square. High quality, deeply atmospheric."
-    )
-
-
-def generate_image(affirmation_text: str, ctx: dict) -> bytes | None:
-    """
-    Call the DALL-E 3 API to generate an image for the affirmation.
-    Returns raw PNG bytes, or None if generation fails.
-    Images are returned as base64 (response_format='b64_json') to avoid
-    a second HTTP request to download from a temporary URL.
-    """
-    image_prompt = build_image_prompt(affirmation_text, ctx)
-    print(f"Generating image with prompt: {image_prompt[:100]}...")
-
-    try:
-        response = openai_client.images.generate(
-            model="dall-e-3", 
-            prompt=image_prompt,
-            size="1024x1024",
-            quality="standard",
-            response_format="b64_json",
-            n=1,
-        )
-        image_b64 = response.data[0].b64_json
-        image_bytes = base64.b64decode(image_b64)
-        print(f"Image generated successfully ({len(image_bytes) // 1024} KB).")
-        return image_bytes
-
-    except Exception as e:
-        # Image generation failure is non-fatal — the text notification was already sent
-        print(f"Warning: image generation failed: {e}")
-        return None
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Pushover notification tool (text only — called by the LangGraph agent)
+# Pushover notification tool
 # ─────────────────────────────────────────────────────────────────────────────
 
 @tool
@@ -400,37 +329,10 @@ def send_push_notification(text: str) -> str:
             "title": "Your Affirmation ✨",
         },
     )
-    return f"Text notification sent (HTTP {response.status_code})"
+    return f"Notification sent (HTTP {response.status_code})"
 
 
 tools = [send_push_notification]
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Pushover image send — called directly after image generation (not via agent)
-# ─────────────────────────────────────────────────────────────────────────────
-
-def send_push_with_image(affirmation_text: str, image_bytes: bytes) -> None:
-    """
-    Send a second Pushover notification containing the generated image.
-    Pushover supports JPEG/PNG/GIF attachments up to 2.5 MB.
-    Sent separately from the text notification so the text always arrives
-    even if image generation is slow or fails.
-    """
-    response = requests.post(
-        "https://api.pushover.net/1/messages.json",
-        data={
-            "token": os.getenv("PUSHOVER_TOKEN"),
-            "user": os.getenv("PUSHOVER_USER"),
-            "message": " ",          # Pushover requires a non-empty message field
-            "title": "Your Affirmation Image 🎨",
-        },
-        files={
-            # Tuple format: (filename, file_bytes, mime_type)
-            "attachment": ("affirmation.png", image_bytes, "image/png"),
-        },
-    )
-    print(f"Image notification sent (HTTP {response.status_code}).")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -468,18 +370,15 @@ graph = graph_builder.compile()
 
 def extract_affirmation_text(result: dict) -> str:
     """
-    Extract the affirmation text from the graph result using two strategies:
+    Extract the affirmation text from the graph result using two strategies.
 
     Strategy 1 (preferred): Read the 'text' argument passed to the
-    send_push_notification tool call. This is the most reliable source because
-    the LLM often skips putting text in AIMessage.content and goes straight
-    to calling the tool.
+    send_push_notification tool call. Most reliable because the LLM often
+    skips AIMessage.content and goes straight to calling the tool.
 
     Strategy 2 (fallback): Look for plain text content in any AIMessage,
     which covers cases where the LLM outputs text before calling the tool.
     """
-    import json
-
     # Strategy 1: extract from tool_calls arguments in AIMessage
     for msg in result["messages"]:
         if not isinstance(msg, AIMessage):
@@ -488,8 +387,7 @@ def extract_affirmation_text(result: dict) -> str:
             continue
         for tc in msg.tool_calls:
             if tc.get("name") == "send_push_notification":
-                args = tc.get("args", {})
-                text = args.get("text", "").strip()
+                text = tc.get("args", {}).get("text", "").strip()
                 if text:
                     print("Extracted affirmation text from tool_call args.")
                     return text
@@ -526,7 +424,6 @@ if __name__ == "__main__":
 
     print(f"[{ctx['now_str']}] Generating {ctx['period']} affirmation...")
 
-    # Step 1: LangGraph generates the affirmation text and sends the text notification
     result = graph.invoke(
         {
             "messages": [
@@ -536,21 +433,11 @@ if __name__ == "__main__":
         }
     )
 
-    # Step 2: Extract the text for logging and image generation
+    # Extract the generated text and persist it to the log
     affirmation_text = extract_affirmation_text(result)
 
     if affirmation_text:
-        # Step 3: Log the affirmation for future deduplication
         append_log(affirmation_text, ctx)
-
-        # Step 4: Generate the image with DALL-E 3
-        image_bytes = generate_image(affirmation_text, ctx)
-
-        # Step 5: Send the image as a separate Pushover notification
-        if image_bytes:
-            send_push_with_image(affirmation_text, image_bytes)
-            print("Done. Text + image both sent and logged.")
-        else:
-            print("Done. Text sent and logged. Image skipped (generation failed).")
+        print("Done. Affirmation sent and logged.")
     else:
         print("Warning: affirmation text could not be extracted for logging.")

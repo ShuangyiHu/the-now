@@ -74,8 +74,8 @@ jobs:
           PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
           LANGCHAIN_TRACING: "true"
           LANGSMITH_ENDPOINT: ${{ secrets.LANGSMITH_ENDPOINT }}
-          LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
-          LANGCHAIN_PROJECT: ${{ secrets.LANGCHAIN_PROJECT }}
+          LANGSMITH_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
+          LANGSMITH_PROJECT: ${{ secrets.LANGCHAIN_PROJECT }}
         run: python affirmation_agent.py
 
       # ── 6. Commit the updated log back to the repository ─────────────────

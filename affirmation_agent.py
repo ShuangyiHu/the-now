@@ -187,7 +187,7 @@ Angle on personal situation:
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 18 <= hour < 22:
+    elif 18 <= hour < 23:
         slot_label = f"{date_str}-evening-slot{hour * 2 + slot}"
         return {
             "period": "evening",
@@ -366,9 +366,10 @@ def generate_image(affirmation_text: str, ctx: dict) -> bytes | None:
 
     try:
         response = openai_client.images.generate(
-            model="dall-e-2",
+            model="dall-e-3", 
             prompt=image_prompt,
             size="1024x1024",
+            quality="standard",
             response_format="b64_json",
             n=1,
         )

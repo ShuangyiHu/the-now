@@ -71,7 +71,11 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
-          PUSHOVER_USER:  ${{ secrets.PUSHOVER_USER }}
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+          LANGCHAIN_TRACING: "true"
+          LANGSMITH_ENDPOINT: ${{ secrets.LANGSMITH_ENDPOINT }}
+          LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
+          LANGCHAIN_PROJECT: ${{ secrets.LANGCHAIN_PROJECT }}
         run: python affirmation_agent.py
 
       # ── 6. Commit the updated log back to the repository ─────────────────

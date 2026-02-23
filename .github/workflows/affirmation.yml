@@ -1,36 +1,33 @@
 # .github/workflows/affirmation.yml
 #
 # Sends a personalized affirmation via Pushover every 30 minutes
-# between 9 AM and 9 PM PST (UTC-8 in winter, UTC-7 in summer).
+# between 9 AM and 9 PM PST/PDT (America/Los_Angeles).
 #
-# After each run, the generated text is committed back to the repo
-# in sent_log.txt so that future runs can avoid repeating content.
+# Triggered externally by cron-job.org via the workflow_dispatch event.
+# cron-job.org POSTs to:
+#   https://api.github.com/repos/ShuangyiHu/the-now/dispatches
+# with body: {"event_type": "affirmation"}
+#
+# The Python script handles all time-window logic internally:
+#   - 9 AM  - 1 PM  → morning affirmation
+#   - 1 PM  - 7 PM  → afternoon affirmation
+#   - 7 PM  - 9 PM  → evening affirmation
+#   - outside window → exits cleanly with no notification sent
+#
+# After each run, sent_log.txt is committed back to the repo
+# so future runs can avoid repeating content.
 #
 # REQUIRED REPOSITORY SECRETS (Settings → Secrets → Actions):
 #   OPENAI_API_KEY   — OpenAI API key
 #   PUSHOVER_TOKEN   — Pushover application token
 #   PUSHOVER_USER    — Pushover user/group key
 
-name: Daily Affirmations (PST 9AM–9PM)
+name: Daily Affirmations (PST 9AM-9PM)
 
 on:
   workflow_dispatch:
-  schedule:
-    # ── Winter (PST = UTC-8) ──────────────────────────────────────────────
-    # 9 AM PST  = 17:00 UTC
-    # 9 PM PST  = 05:00 UTC (next calendar day)
-    #
-    # GitHub cron does not support multi-day ranges that cross midnight,
-    # so we split into two rules:
-    #   Rule 1: UTC 17:00–23:30  →  PST 9:00 AM – 3:30 PM
-    #   Rule 2: UTC 00:00–05:00  →  PST 4:00 PM – 9:00 PM
-    #
-    # NOTE: During summer (PDT = UTC-7) the window shifts one hour earlier.
-    # The Python script's get_time_context() uses pytz to detect the real
-    # local time and exits cleanly if triggered outside 9 AM–9 PM PST/PDT,
-    # so no change to the cron schedule is needed for DST.
-    - cron: "0,30 17-23 * * *"
-    - cron: "0,30 0-5 * * *"
+    # Triggered by cron-job.org every 30 minutes, 9AM-9PM PST
+    # No inputs needed — the Python script determines the time period internally
 
 jobs:
   send-affirmation:
@@ -45,7 +42,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Fetch the full history so that git push works correctly
           fetch-depth: 1
 
       # ── 2. Set up Python ─────────────────────────────────────────────────
@@ -75,19 +71,19 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
-          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+          PUSHOVER_USER:  ${{ secrets.PUSHOVER_USER }}
         run: python affirmation_agent.py
 
       # ── 6. Commit the updated log back to the repository ─────────────────
-      # Only commits if sent_log.txt was actually modified.
-      # Uses a neutral bot identity so the commit does not appear under
-      # your personal GitHub account.
+      # Uses git status instead of git diff to correctly handle both:
+      #   - first run (sent_log.txt is a new untracked file)
+      #   - subsequent runs (sent_log.txt is a modified tracked file)
+      # Only commits when the file actually changed.
       - name: Commit updated sent_log.txt
         run: |
           git config user.name  "affirmation-bot"
           git config user.email "affirmation-bot@users.noreply.github.com"
 
-          # Use git status instead of git diff to handle both new and modified files
           if [ -z "$(git status --porcelain sent_log.txt)" ]; then
             echo "sent_log.txt unchanged — nothing to commit."
           else

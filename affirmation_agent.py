@@ -116,7 +116,7 @@ def append_log(affirmation_text: str, ctx: dict) -> None:
 def get_time_context() -> dict | None:
     """
     Return a dictionary describing the current PST time period.
-    Returns None if outside the active window (9AM-9PM PST/PDT).
+    Returns None if outside the active window (9AM-10PM PST/PDT).
     Slot label is unique per 30-minute window per day, used as a deduplication seed.
     """
     pst = pytz.timezone("America/Los_Angeles")
@@ -155,7 +155,7 @@ Angle on personal situation:
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 12 <= hour < 18:
+    elif 12 <= hour < 19:
         slot_label = f"{date_str}-afternoon-slot{hour * 2 + slot}"
         return {
             "period": "afternoon",
@@ -187,7 +187,7 @@ Angle on personal situation:
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 18 <= hour < 21:
+    elif 18 <= hour < 22:
         slot_label = f"{date_str}-evening-slot{hour * 2 + slot}"
         return {
             "period": "evening",

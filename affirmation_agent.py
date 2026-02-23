@@ -154,7 +154,7 @@ Angle on personal situation:
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 12 <= hour < 18:
+    elif 12 <= hour < 19:
         slot_label = f"{date_str}-afternoon-slot{hour * 2 + slot}"
         return {
             "period": "afternoon",
@@ -180,7 +180,7 @@ Angle on personal situation:
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 18 <= hour < 21:
+    elif 19 <= hour < 22:
         slot_label = f"{date_str}-evening-slot{hour * 2 + slot}"
         return {
             "period": "evening",
@@ -205,7 +205,7 @@ Angle on personal situation:
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    # Outside the 9AM-9PM active window
+    # Outside the 9AM-10PM active window
     return None
 
 
@@ -339,7 +339,7 @@ def send_push_notification(text: str) -> str:
             "token": os.getenv("PUSHOVER_TOKEN"),
             "user": os.getenv("PUSHOVER_USER"),
             "message": text,
-            "title": "Your Affirmation ✨",
+            "title": "The Now ✨",
         },
     )
     return f"Notification sent (HTTP {response.status_code})"
@@ -416,7 +416,7 @@ if __name__ == "__main__":
         # This branch should rarely trigger in practice because the GitHub Actions
         # cron schedule is configured to match the 9AM-9PM PST window exactly.
         # It acts as a safety net for edge cases like DST transitions.
-        print("Outside active hours (9 AM – 9 PM PST). Nothing to send. Exiting.")
+        print("Outside active hours (9 AM – 10 PM PST). Nothing to send. Exiting.")
         exit(0)
 
     print(f"[{ctx['now_str']}] Generating {ctx['period']} affirmation...")

@@ -34,7 +34,7 @@ MAX_LOG_ENTRIES = 50
 RECENT_FOR_PROMPT = 10
 
 # Location used for weather lookups — change to your city
-WEATHER_LOCATION = "Los Angeles"
+WEATHER_LOCATION = "Seattle"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -101,9 +101,9 @@ def get_time_context() -> dict | None:
     the active window (9AM-9PM PST/PDT).
 
     Time windows:
-      Morning   : 9 AM  - 1 PM  (hour 9-12)
-      Afternoon : 1 PM  - 7 PM  (hour 13-18)
-      Evening   : 7 PM  - 9 PM  (hour 19-20)
+      Morning   : 9 AM  - 1 PM  (hour 9-13)
+      Afternoon : 1 PM  - 7 PM  (hour 13-19)
+      Evening   : 7 PM  - 9 PM  (hour 19-22)
     """
     pst = pytz.timezone("America/Los_Angeles")
     now = datetime.now(pst)
@@ -142,13 +142,13 @@ The user has been grinding through applications all morning and is hitting a wal
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 19 <= hour < 21:
+    elif 19 <= hour <= 22:
         return {
             "period": "evening",
             "emoji": "🌙",
             "slot_label": f"{date_str}-evening-slot{hour * 2 + slot}",
             "tone": "calming, compassionate, peaceful",
-            "context": """It is evening (7 PM - 9 PM PST).
+            "context": """It is evening (7 PM - 10 PM PST).
 The user is winding down and needs permission to truly rest.
 - Help them set down the weight of the day
 - Showing up today was enough — it always counts
@@ -420,7 +420,7 @@ if __name__ == "__main__":
     ctx = get_time_context()
 
     if ctx is None:
-        print("Outside active hours (9 AM - 9 PM PST). Nothing to send. Exiting.")
+        print("Outside active hours (9 AM - 10 PM PST). Nothing to send. Exiting.")
         exit(0)
 
     print(f"[{ctx['now_str']}] Starting {ctx['period']} affirmation agent...")

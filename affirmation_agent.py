@@ -34,7 +34,7 @@ MAX_LOG_ENTRIES = 50
 RECENT_FOR_PROMPT = 10
 
 # Location used for weather lookups — change to your city
-WEATHER_LOCATION = "Seattle"
+WEATHER_LOCATION = "Los Angeles"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -42,22 +42,17 @@ WEATHER_LOCATION = "Seattle"
 # ─────────────────────────────────────────────────────────────────────────────
 
 PERSONAL_CONTEXT = """
-PERSONAL SITUATION (weave this naturally — do not state it bluntly):
-- Actively job hunting, feeling uncertain about career path
-- Recently went through a breakup, emotionally recovering
-- Both happening simultaneously — overall sense of being at a low point
-- Key themes to reinforce:
-    * Pain is temporary — this season will pass
-    * Living in the present moment is the antidote to rumination
-    * Do not let imagined versions of the past or future hijack the present
-    * Self-worth is not determined by job titles or relationship status
-- Tone: warm and real — acknowledge difficulty briefly, pivot to strength and hope.
-  Never use toxic positivity.
+PERSONAL SITUATION:
+- Job hunting and recently went through a breakup — both at the same time
+- Do NOT mention these facts directly or explain them
+- Do NOT use them as a setup ("Even though things are hard...")
+- Instead, let the message arrive at the reader like something they already know is true
+- The best affirmations do not explain pain — they interrupt it
 
 MOVEMENT REMINDER:
-- Every message must include a brief nudge to get up, stretch, or move
-- One sentence only, woven naturally into the message
-- Vary the wording every time
+- Include a movement nudge in roughly 1 out of every 3 messages, not every time
+- When included, make it feel like an afterthought from a friend, not a wellness tip
+- Keep it to half a sentence max, completely varied each time
 """
 
 
@@ -106,9 +101,9 @@ def get_time_context() -> dict | None:
     the active window (9AM-9PM PST/PDT).
 
     Time windows:
-      Morning   : 9 AM  - 1 PM  (hour 9-13)
-      Afternoon : 1 PM  - 6 PM  (hour 13-18)
-      Evening   : 6 PM  - 10 PM  (hour 18-22)
+      Morning   : 9 AM  - 1 PM  (hour 9-12)
+      Afternoon : 1 PM  - 7 PM  (hour 13-18)
+      Evening   : 7 PM  - 9 PM  (hour 19-20)
     """
     pst = pytz.timezone("America/Los_Angeles")
     now = datetime.now(pst)
@@ -132,13 +127,13 @@ job searching and a recent breakup.
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 13 <= hour < 18:
+    elif 13 <= hour < 19:
         return {
             "period": "afternoon",
             "emoji": "☀️",
             "slot_label": f"{date_str}-afternoon-slot{hour * 2 + slot}",
             "tone": "re-energizing, focused, steady and grounded",
-            "context": """It is afternoon (1 PM - 6 PM PST).
+            "context": """It is afternoon (1 PM - 7 PM PST).
 The user has been grinding through applications all morning and is hitting a wall.
 - Acknowledge that the middle of hard stretches is the toughest part
 - Reignite self-worth independent of external outcomes
@@ -147,13 +142,13 @@ The user has been grinding through applications all morning and is hitting a wal
             "now_str": now.strftime("%I:%M %p PST"),
         }
 
-    elif 18 <= hour <= 22:
+    elif 19 <= hour < 21:
         return {
             "period": "evening",
             "emoji": "🌙",
             "slot_label": f"{date_str}-evening-slot{hour * 2 + slot}",
             "tone": "calming, compassionate, peaceful",
-            "context": """It is evening (6 PM - 10 PM PST).
+            "context": """It is evening (7 PM - 9 PM PST).
 The user is winding down and needs permission to truly rest.
 - Help them set down the weight of the day
 - Showing up today was enough — it always counts
@@ -176,13 +171,13 @@ def get_language(slot_label: str) -> dict:
         return {
             "lang": "English",
             "instruction": "Write the entire affirmation in English.",
-            "movement_hint": "End with one gentle sentence in English encouraging movement.",
+            "movement_hint": "Only if natural: add half a sentence nudging movement. Skip entirely if forced.",
         }
     else:
         return {
             "lang": "Chinese",
             "instruction": "用中文写作，语言自然流畅，像真实朋友说话，不像机器翻译。",
-            "movement_hint": "最后用一句话提醒用户起来活动，每次措辞不同。",
+            "movement_hint": "仅在自然的情况下加半句活动提示，强迫则直接省略。",
         }
 
 
@@ -214,8 +209,11 @@ TIME-SPECIFIC CONTEXT:
 YOU HAVE FOUR TOOLS. Use them in this order before sending:
 
 STEP 1 — call read_sent_log
-  Read the recent message history to understand what has already been sent.
-  Use this to avoid repeating themes, openings, metaphors, or movement reminders.
+  Read the recent message history carefully.
+  Avoid repeating: opening words, sentence structure, metaphors, emotional angle,
+  and especially the movement reminder phrasing.
+  If the last 3 messages all acknowledged hardship before pivoting — do not do that.
+  If the last message used weather — skip weather this time.
 
 STEP 2 — call get_weather
   Get the current weather in {WEATHER_LOCATION}.
@@ -233,13 +231,24 @@ STEP 4 — call send_push_notification
 
 FORMATTING RULES for the final message:
 1.  Begin with the {ctx['emoji']} emoji.
-2.  2-4 sentences, under 100 words total.
-3.  Weave present-moment awareness naturally — the antidote to pain is HERE, NOW.
-4.  {lang['movement_hint']}
-5.  BANNED words: "journey", "embrace", "thrive", "hustle", "grind", "amazing",
-    "awesome", "you've got this", "你值得更好的", "加油", "相信自己", "不要放弃"
-6.  Do NOT open with "I am" or "我是".
-7.  Do NOT ask questions.
+2.  LENGTH: 1-2 sentences only. Under 40 words. Shorter is stronger.
+3.  ONE idea per message. Do not try to cover everything.
+4.  MOVEMENT: only include if it arises naturally — skip it entirely if it feels forced.
+    When included: half a sentence max, completely casual, never the same phrasing twice.
+5.  STRUCTURE: avoid the pattern "acknowledge hardship → pivot to hope".
+    Just arrive at the hopeful thing directly. Trust the reader.
+6.  BANNED words and structures:
+    - "journey", "embrace", "thrive", "hustle", "grind", "amazing", "awesome"
+    - "你值得更好的", "加油", "相信自己", "不要放弃"
+    - "your self-worth is not defined by..." (说教)
+    - "pain is temporary" (said it too many times already)
+    - "it's okay to feel..." (condescending)
+    - "remember that..." (lecturing tone)
+    - Any sentence that starts by naming the problem before offering comfort
+7.  Do NOT open with "I am" or "我是".
+8.  Do NOT ask questions.
+9.  The quote from search_quote should only appear if it is SHORT and genuinely
+    surprising — cut it entirely if it is generic or over 15 words.
 """
 
 
@@ -264,7 +273,7 @@ def read_sent_log() -> str:
 @tool
 def get_weather() -> str:
     """
-    Get the current weather conditions in the user's location (Seattle).
+    Get the current weather conditions in the user's location (Los Angeles).
     Use this to personalize the affirmation tone — e.g. rainy days might call
     for a cozier, more introspective message; sunny days might be more energizing.
     Returns a short weather summary string.
@@ -342,7 +351,7 @@ def send_push_notification(text: str) -> str:
             "token": os.getenv("PUSHOVER_TOKEN"),
             "user": os.getenv("PUSHOVER_USER"),
             "message": text,
-            "title": "The Now ✨",
+            "title": "Your Affirmation ✨",
         },
     )
     return f"Notification sent (HTTP {response.status_code})"
@@ -411,7 +420,7 @@ if __name__ == "__main__":
     ctx = get_time_context()
 
     if ctx is None:
-        print("Outside active hours (9 AM - 10 PM PST). Nothing to send. Exiting.")
+        print("Outside active hours (9 AM - 9 PM PST). Nothing to send. Exiting.")
         exit(0)
 
     print(f"[{ctx['now_str']}] Starting {ctx['period']} affirmation agent...")

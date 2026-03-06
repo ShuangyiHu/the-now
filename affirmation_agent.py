@@ -28,6 +28,9 @@ from config import (
     LLM_TOP_P,
     LANGUAGE,
     LIFE_SCRIPT,
+    SCENE_BANK,
+    ORDER_SIGNALS,
+    AFFIRMATION_THEMES,
     PERIOD_ENERGY,
     PERIOD_EMOJI,
     PERIOD_HOURS,
@@ -69,7 +72,7 @@ def _read_recent_log_entries(n: int = RECENT_FOR_PROMPT) -> list[str]:
 def append_log(affirmation_text: str, ctx: dict) -> None:
     pst = pytz.timezone("America/Los_Angeles")
     timestamp = datetime.now(pst).strftime("%Y-%m-%d %H:%M PST")
-    new_entry = f"[{timestamp} | {ctx['period']}] {affirmation_text.strip()}"
+    new_entry = f"[{timestamp} | {ctx['period']} | {ctx['slot_label']}] {affirmation_text.strip()}"
 
     existing = []
     if LOG_FILE.exists():
@@ -132,9 +135,27 @@ THIS MESSAGE'S CREATIVE ANGLE: {flavor['name'].upper()}
 {directive}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-LIFE SCRIPT — use as raw material, do NOT quote verbatim:
+LIFE SCRIPT — background reality
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {LIFE_SCRIPT}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SCENE BANK — concrete life moments
+Pick ONE if writing a visualization message
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{chr(10).join("- " + s for s in SCENE_BANK)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+UNIVERSE ORDER SIGNALS
+Use for manifestation messages
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{chr(10).join("- " + s for s in ORDER_SIGNALS)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AFFIRMATION THEMES
+Use for identity statements
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{chr(10).join("- " + s for s in AFFIRMATION_THEMES)}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TOOLS:
@@ -146,8 +167,6 @@ CRAFT RULES:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {CRAFT_RULES}
 """
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Tools
 # ─────────────────────────────────────────────────────────────────────────────
@@ -240,7 +259,7 @@ class State(TypedDict):
 
 
 llm = ChatOpenAI(
-    model="gpt-4o-mini",
+    model="gpt-4o",
     temperature=LLM_TEMPERATURE,
     model_kwargs={"top_p": LLM_TOP_P},
 )

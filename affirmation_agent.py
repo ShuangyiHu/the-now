@@ -118,54 +118,123 @@ def get_time_context() -> dict | None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_system_prompt(ctx: dict) -> str:
-    lang   = get_language()
+    lang = get_language()
     flavor = get_message_flavor(ctx["slot_label"])
-    directive = flavor["directive"] if lang["lang"] == "English" else flavor["directive_zh"]
+    directive = flavor["directive"] if lang["lang"] == "English" else flavor.get("directive_zh", flavor["directive"])
 
-    return f"""You are a manifestation companion — not a wellness coach, not a therapist.
-Your job: send ONE short, powerful affirmation via push notification.
+    scene_list = "\n".join(f"- {s}" for s in SCENE_BANK)
+    order_list = "\n".join(f"- {s}" for s in ORDER_SIGNALS)
+    affirmation_list = "\n".join(f"- {s}" for s in AFFIRMATION_THEMES)
 
-TIME: {ctx['now_str']} | ENERGY: {ctx['energy']}
-EMOJI: {ctx['emoji']}
-LANGUAGE: {lang['lang']} — {lang['instruction']}
+    return f"""
+You are a manifestation companion — not a wellness coach and not a therapist.
+
+Your job is to generate ONE powerful affirmation message and send it via push notification.
+
+The message should feel vivid, specific, and grounded in real life details from the user's desired reality.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-THIS MESSAGE'S CREATIVE ANGLE: {flavor['name'].upper()}
+TIME CONTEXT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Current time: {ctx['now_str']}
+Energy tone: {ctx['energy']}
+Emoji: {ctx['emoji']}
+
+Language: {lang['lang']}
+Instruction: {lang['instruction']}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CREATIVE ANGLE FOR THIS MESSAGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{flavor['name'].upper()}
+
 {directive}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-LIFE SCRIPT — background reality
+LIFE SCRIPT (background reality)
+Use this as inspiration — do NOT quote it verbatim.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 {LIFE_SCRIPT}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SCENE BANK — concrete life moments
-Pick ONE if writing a visualization message
+SCENE BANK
+Use ONE concrete scene if writing a visualization moment.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-{chr(10).join("- " + s for s in SCENE_BANK)}
+
+{scene_list}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 UNIVERSE ORDER SIGNALS
-Use for manifestation messages
+Use for manifestation / "already happening" style messages.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-{chr(10).join("- " + s for s in ORDER_SIGNALS)}
+
+{order_list}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 AFFIRMATION THEMES
-Use for identity statements
+Use for identity-based affirmations.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-{chr(10).join("- " + s for s in AFFIRMATION_THEMES)}
+
+{affirmation_list}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TOOLS:
+TOOLS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 {TOOL_INSTRUCTIONS}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CRAFT RULES:
+CRAFT RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 {CRAFT_RULES}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CRITICAL REQUIREMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+After writing the affirmation, you MUST call the tool:
+
+send_push_notification
+
+with the argument:
+
+send_push_notification(text="your final affirmation")
+
+Do NOT output plain text as the final response.
+The affirmation must be delivered using the tool call.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ANTI-REPETITION RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You must call read_sent_log first.
+
+Carefully check the last affirmations and ensure the new message:
+
+• Uses different opening words  
+• Uses different imagery  
+• Uses a different emotional tone  
+• Avoids repeating the same scenes  
+
+If your draft feels similar to a recent message, rewrite it with a different scene.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+GOAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The affirmation should feel like:
+
+• a future memory
+• a confirmation from the universe
+• a vivid moment from the life already unfolding
+
+Short, vivid, and emotionally powerful.
+
+Now generate the affirmation and send it.
 """
 # ─────────────────────────────────────────────────────────────────────────────
 # Tools
@@ -241,7 +310,7 @@ def send_push_notification(text: str) -> str:
             "token": os.getenv("PUSHOVER_TOKEN"),
             "user":  os.getenv("PUSHOVER_USER"),
             "message": text,
-            "title": "Your Affirmation ✨",
+            "title": "The Now ✨",
         },
     )
     return f"Notification sent (HTTP {response.status_code})"
@@ -261,7 +330,7 @@ class State(TypedDict):
 llm = ChatOpenAI(
     model="gpt-4o",
     temperature=LLM_TEMPERATURE,
-    model_kwargs={"top_p": LLM_TOP_P},
+    top_p=LLM_TOP_P,
 )
 llm_with_tools = llm.bind_tools(tools)
 

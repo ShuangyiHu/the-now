@@ -48,9 +48,13 @@ LOG_FILE = Path("sent_log.txt")
 # Helpers: flavor & language selection
 # ─────────────────────────────────────────────────────────────────────────────
 
-def get_message_flavor(slot_label: str) -> dict:
-    slot_num = int(slot_label.split("slot")[-1])
-    return MESSAGE_FLAVORS[slot_num % len(MESSAGE_FLAVORS)]
+def get_message_flavor(log_entry_count: int) -> dict:
+    """
+    FIX: Rotate flavors based on total number of log entries (cumulative),
+    not the slot number (which is a fixed time-of-day value that never changes).
+    This ensures true rotation across all flavors every day.
+    """
+    return MESSAGE_FLAVORS[log_entry_count % len(MESSAGE_FLAVORS)]
 
 
 def get_language() -> dict:
@@ -67,6 +71,13 @@ def _read_recent_log_entries(n: int = RECENT_FOR_PROMPT) -> list[str]:
     raw = LOG_FILE.read_text(encoding="utf-8").strip().splitlines()
     entries = [line for line in raw if line.strip() and not line.startswith("─")]
     return entries[-n:]
+
+
+def _count_log_entries() -> int:
+    if not LOG_FILE.exists():
+        return 0
+    raw = LOG_FILE.read_text(encoding="utf-8").strip().splitlines()
+    return sum(1 for line in raw if line.strip() and not line.startswith("─"))
 
 
 def append_log(affirmation_text: str, ctx: dict) -> None:
@@ -117,10 +128,9 @@ def get_time_context() -> dict | None:
 # System prompt — assembled from config pieces
 # ─────────────────────────────────────────────────────────────────────────────
 
-def build_system_prompt(ctx: dict) -> str:
+def build_system_prompt(ctx: dict, flavor: dict) -> str:
     lang = get_language()
-    flavor = get_message_flavor(ctx["slot_label"])
-    directive = flavor["directive"] if lang["lang"] == "English" else flavor.get("directive_zh", flavor["directive"])
+    directive = flavor["directive"]
 
     scene_list = "\n".join(f"- {s}" for s in SCENE_BANK)
     order_list = "\n".join(f"- {s}" for s in ORDER_SIGNALS)
@@ -215,12 +225,27 @@ You must call read_sent_log first.
 
 Carefully check the last affirmations and ensure the new message:
 
-• Uses different opening words  
-• Uses different imagery  
-• Uses a different emotional tone  
-• Avoids repeating the same scenes  
+• Uses different opening words
+• Uses different imagery
+• Uses a different emotional tone
+• Avoids repeating the same scenes
 
 If your draft feels similar to a recent message, rewrite it with a different scene.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOPIC DIVERSITY RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The life script contains FIVE equal areas of life. Do NOT default to career/job.
+
+Distribute messages across all five areas:
+  1. CAREER — office, coding, engineering, badge, pull requests
+  2. LOVE — reconnecting with him, walks through Fremont, quiet evenings together
+  3. TRAVEL — flight to China, family reunion, summer train trip with friends
+  4. FRIENDS — Gas Works Park, spontaneous dinners, laughter, social richness
+  5. INNER STATE — calm, grounded, expansive, no longer chasing — just living
+
+Look at recent messages and pick a topic area that hasn't appeared recently.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 GOAL
@@ -236,6 +261,8 @@ Short, vivid, and emotionally powerful.
 
 Now generate the affirmation and send it.
 """
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tools
 # ─────────────────────────────────────────────────────────────────────────────
@@ -377,14 +404,17 @@ if __name__ == "__main__":
         print("Outside active hours. Exiting.")
         exit(0)
 
-    flavor = get_message_flavor(ctx["slot_label"])
-    lang   = get_language()
+    # FIX: use cumulative log count for true flavor rotation
+    log_count = _count_log_entries()
+    flavor = get_message_flavor(log_count)
+    lang = get_language()
+
     print(f"[{ctx['now_str']}] {ctx['period'].upper()}")
-    print(f"Flavor: {flavor['name']} | Lang: {lang['lang']}")
+    print(f"Flavor #{log_count % len(MESSAGE_FLAVORS)}: {flavor['name']} | Lang: {lang['lang']}")
 
     result = graph.invoke({
         "messages": [
-            SystemMessage(content=build_system_prompt(ctx)),
+            SystemMessage(content=build_system_prompt(ctx, flavor)),
             HumanMessage(content="Please generate and send my affirmation now."),
         ]
     })

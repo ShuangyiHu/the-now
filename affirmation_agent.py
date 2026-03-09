@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 from langchain_core.tools import tool
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
-from langgraph.graph import StateGraph, START
+from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 
@@ -49,11 +49,6 @@ LOG_FILE = Path("sent_log.txt")
 # ─────────────────────────────────────────────────────────────────────────────
 
 def get_message_flavor(log_entry_count: int) -> dict:
-    """
-    FIX: Rotate flavors based on total number of log entries (cumulative),
-    not the slot number (which is a fixed time-of-day value that never changes).
-    This ensures true rotation across all flavors every day.
-    """
     return MESSAGE_FLAVORS[log_entry_count % len(MESSAGE_FLAVORS)]
 
 
@@ -125,7 +120,7 @@ def get_time_context() -> dict | None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# System prompt — assembled from config pieces
+# System prompt
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_system_prompt(ctx: dict, flavor: dict) -> str:
@@ -201,21 +196,6 @@ CRAFT RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {CRAFT_RULES}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CRITICAL REQUIREMENT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-After writing the affirmation, you MUST call the tool:
-
-send_push_notification
-
-with the argument:
-
-send_push_notification(text="your final affirmation")
-
-Do NOT output plain text as the final response.
-The affirmation must be delivered using the tool call.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ANTI-REPETITION RULE
@@ -361,17 +341,76 @@ llm = ChatOpenAI(
 )
 llm_with_tools = llm.bind_tools(tools)
 
+# ── KEY FIX ──────────────────────────────────────────────────────────────────
+# A separate LLM binding that FORCES send_push_notification to be called.
+# Used as a guaranteed fallback when the agent finishes without sending.
+llm_force_send = llm.bind_tools(
+    tools,
+    tool_choice={"type": "function", "function": {"name": "send_push_notification"}},
+)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _notification_was_sent(state: State) -> bool:
+    """Check if send_push_notification was already called in this run."""
+    for msg in state["messages"]:
+        if not isinstance(msg, AIMessage):
+            continue
+        if not hasattr(msg, "tool_calls") or not msg.tool_calls:
+            continue
+        for tc in msg.tool_calls:
+            if tc.get("name") == "send_push_notification":
+                return True
+    return False
+
 
 def chatbot(state: State) -> dict:
     return {"messages": [llm_with_tools.invoke(state["messages"])]}
 
 
+def force_send_node(state: State) -> dict:
+    """
+    Fallback: the agent finished without calling send_push_notification.
+    Force the LLM to produce and send an affirmation right now.
+    """
+    print("⚠️  Agent did not call send_push_notification — forcing send now.")
+    forced_msg = llm_force_send.invoke(state["messages"])
+    return {"messages": [forced_msg]}
+
+
+def after_chatbot_router(state: State):
+    """
+    After the chatbot node:
+    - If LLM called a tool → go to tools node (normal flow)
+    - If LLM finished WITHOUT calling send_push_notification → go to force_send
+    - If LLM finished AND notification was already sent → end
+    """
+    last_msg = state["messages"][-1]
+
+    # LLM wants to call a tool
+    if isinstance(last_msg, AIMessage) and getattr(last_msg, "tool_calls", None):
+        return "tools"
+
+    # LLM finished — check if notification was sent
+    if _notification_was_sent(state):
+        return END
+
+    # LLM finished but never sent — force it
+    return "force_send"
+
+
 graph_builder = StateGraph(State)
 graph_builder.add_node("chatbot", chatbot)
 graph_builder.add_node("tools", ToolNode(tools=tools))
+graph_builder.add_node("force_send", force_send_node)
+
 graph_builder.add_edge(START, "chatbot")
-graph_builder.add_conditional_edges("chatbot", tools_condition)
+graph_builder.add_conditional_edges("chatbot", after_chatbot_router)
 graph_builder.add_edge("tools", "chatbot")
+
+# After force_send fires the tool call, run the ToolNode to actually execute it
+graph_builder.add_edge("force_send", "tools")
+
 graph = graph_builder.compile()
 
 
@@ -404,7 +443,6 @@ if __name__ == "__main__":
         print("Outside active hours. Exiting.")
         exit(0)
 
-    # FIX: use cumulative log count for true flavor rotation
     log_count = _count_log_entries()
     flavor = get_message_flavor(log_count)
     lang = get_language()

@@ -18,7 +18,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
-from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.prebuilt import ToolNode
 
 from config import (
     WEATHER_LOCATION,
@@ -50,30 +50,40 @@ LOG_FILE = Path("sent_log.txt")
 # Helpers: flavor selection
 #
 # Rotation pattern (every 3 messages):
-#   position 0 → general flavor  (rotates through GENERAL_FLAVOR_INDICES)
-#   position 1 → general flavor  (rotates through GENERAL_FLAVOR_INDICES)
-#   position 2 → interview flavor (INTERVIEW_FLAVOR_INDEX)
+#   position 0 → general flavor
+#   position 1 → general flavor
+#   position 2 → interview flavor
 #
-# This guarantees ~1/3 of all messages are interview-focused.
+# FIX: general_index now tracks only the general-slot count independently,
+# so it properly rotates through all 5 general flavors without interference
+# from the overall log_entry_count parity.
 # ─────────────────────────────────────────────────────────────────────────────
 
 def get_message_flavor(log_entry_count: int) -> dict:
     """
     Returns the flavor dict for the current message.
 
-    Every 3rd message (log_entry_count % 3 == 2) → interview flavor.
-    The two interview flavors alternate: calm certainty vs warm encouragement.
-    All other messages → cycle through general flavors.
+    Every 3rd message (cycle_position == 2) → interview flavor.
+    The two interview flavors alternate each interview slot.
+    General slots (positions 0 and 1) → rotate through all GENERAL_FLAVOR_INDICES.
+
+    FIX: general_index is derived from the count of general messages sent so far
+    (not from log_entry_count directly), ensuring true rotation through all 5 general
+    flavors independent of whether the current slot is position 0 or 1 in the cycle.
     """
     cycle_position = log_entry_count % 3
 
     if cycle_position == 2:
         # Interview slot — alternate between the two interview flavors
-        interview_index = (log_entry_count // 3) % len(INTERVIEW_FLAVOR_INDICES)
+        interview_slot_number = log_entry_count // 3
+        interview_index = interview_slot_number % len(INTERVIEW_FLAVOR_INDICES)
         return MESSAGE_FLAVORS[INTERVIEW_FLAVOR_INDICES[interview_index]]
     else:
-        # General slot — rotate through general flavors using the overall count
-        general_index = log_entry_count % len(GENERAL_FLAVOR_INDICES)
+        # General slot — count how many general messages have been sent so far
+        # In every group of 3: positions 0 and 1 are general → 2 general per 3 total
+        full_cycles = log_entry_count // 3          # completed full cycles of 3
+        general_count = full_cycles * 2 + cycle_position  # general msgs sent so far
+        general_index = general_count % len(GENERAL_FLAVOR_INDICES)
         return MESSAGE_FLAVORS[GENERAL_FLAVOR_INDICES[general_index]]
 
 
@@ -151,6 +161,27 @@ def get_time_context() -> dict | None:
 def build_system_prompt(ctx: dict, flavor: dict) -> str:
     lang = get_language()
     directive = flavor["directive"]
+    flavor_id = flavor["id"]
+
+    # Hard block: tell LLM explicitly whether interview content is allowed
+    is_interview_flavor = flavor_id in ("tiktok_interview", "tiktok_cheerleader")
+    if is_interview_flavor:
+        interview_block = ""  # interview flavors: no restriction needed
+        topic_rule_header = "INTERVIEW MESSAGE — write about TikTok USDS interview only."
+    else:
+        interview_block = """
+⚠️  INTERVIEW CONTENT BLOCK — THIS MESSAGE IS NOT AN INTERVIEW MESSAGE ⚠️
+
+The current flavor is a GENERAL flavor. You MUST NOT write about:
+  - TikTok USDS interview, coding round, offer letter
+  - Any interview preparation or result
+  - Badge-scanning into TikTok USDS for the first time
+  - Recruiter emails related to TikTok USDS
+
+If you feel drawn to write about the interview, STOP and pick a completely
+different scene from LOVE, TRAVEL, FRIENDS, or INNER STATE instead.
+"""
+        topic_rule_header = "GENERAL MESSAGE — interview content is BLOCKED for this slot."
 
     scene_list = "\n".join(f"- {s}" for s in SCENE_BANK)
     order_list = "\n".join(f"- {s}" for s in ORDER_SIGNALS)
@@ -175,16 +206,20 @@ Language: {lang['lang']}
 Instruction: {lang['instruction']}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CREATIVE ANGLE FOR THIS MESSAGE
+THIS MESSAGE'S ASSIGNED FLAVOR
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-{flavor['name'].upper()}
+{topic_rule_header}
+
+Flavor: {flavor['name'].upper()}
 
 {directive}
 
+{interview_block}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 LIFE SCRIPT (background reality)
-Use this as inspiration — do NOT quote it verbatim.
+Use as inspiration — do NOT quote verbatim.
+For general flavors, focus on areas 1–5 below (not area 0).
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {LIFE_SCRIPT}
@@ -245,28 +280,24 @@ TOPIC DIVERSITY RULE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 The life script contains SIX areas of life:
-  0. TIKTOK USDS INTERVIEW — this slot is pre-assigned ~1/3 of all messages
-  1. CAREER — office, coding, engineering, badge, pull requests
+  0. TIKTOK USDS INTERVIEW — ONLY used when the flavor is an interview flavor
+  1. CAREER — office, coding, engineering, badge, pull requests (non-TikTok)
   2. LOVE — reconnecting with him, walks through Fremont, quiet evenings together
   3. TRAVEL — flight to China, family reunion, summer train trip with friends
   4. FRIENDS — Gas Works Park, spontaneous dinners, laughter, social richness
   5. INNER STATE — calm, grounded, expansive, no longer chasing — just living
 
-For non-interview messages: look at recent messages and pick the topic area
-that hasn't appeared recently among areas 1–5.
+For general flavors: you must pick from areas 1–5 only.
+Look at recent messages and pick the area least recently covered.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 GOAL
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 The affirmation should feel like:
-
 • a future memory
 • a confirmation from the universe
 • a vivid moment from the life already unfolding
-
-For interview messages specifically: write from the place where it's already done.
-Not "you will succeed" — but "this already succeeded."
 
 Short, vivid, and emotionally powerful.
 
@@ -352,18 +383,13 @@ llm = ChatOpenAI(
 )
 llm_with_tools = llm.bind_tools(tools)
 
-# ── KEY FIX ──────────────────────────────────────────────────────────────────
-# A separate LLM binding that FORCES send_push_notification to be called.
-# Used as a guaranteed fallback when the agent finishes without sending.
 llm_force_send = llm.bind_tools(
     tools,
     tool_choice={"type": "function", "function": {"name": "send_push_notification"}},
 )
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 def _notification_was_sent(state: State) -> bool:
-    """Check if send_push_notification was already called in this run."""
     for msg in state["messages"]:
         if not isinstance(msg, AIMessage):
             continue
@@ -380,33 +406,20 @@ def chatbot(state: State) -> dict:
 
 
 def force_send_node(state: State) -> dict:
-    """
-    Fallback: the agent finished without calling send_push_notification.
-    Force the LLM to produce and send an affirmation right now.
-    """
     print("⚠️  Agent did not call send_push_notification — forcing send now.")
     forced_msg = llm_force_send.invoke(state["messages"])
     return {"messages": [forced_msg]}
 
 
 def after_chatbot_router(state: State):
-    """
-    After the chatbot node:
-    - If LLM called a tool → go to tools node (normal flow)
-    - If LLM finished WITHOUT calling send_push_notification → go to force_send
-    - If LLM finished AND notification was already sent → end
-    """
     last_msg = state["messages"][-1]
 
-    # LLM wants to call a tool
     if isinstance(last_msg, AIMessage) and getattr(last_msg, "tool_calls", None):
         return "tools"
 
-    # LLM finished — check if notification was sent
     if _notification_was_sent(state):
         return END
 
-    # LLM finished but never sent — force it
     return "force_send"
 
 
@@ -418,8 +431,6 @@ graph_builder.add_node("force_send", force_send_node)
 graph_builder.add_edge(START, "chatbot")
 graph_builder.add_conditional_edges("chatbot", after_chatbot_router)
 graph_builder.add_edge("tools", "chatbot")
-
-# After force_send fires the tool call, run the ToolNode to actually execute it
 graph_builder.add_edge("force_send", "tools")
 
 graph = graph_builder.compile()
@@ -459,10 +470,11 @@ if __name__ == "__main__":
     lang = get_language()
 
     cycle_pos = log_count % 3
-    flavor_label = flavor['name'] if cycle_pos != 2 else f"INTERVIEW — {flavor['name']}"
+    is_interview = cycle_pos == 2
+    flavor_label = flavor['name'] if not is_interview else f"INTERVIEW — {flavor['name']}"
 
     print(f"[{ctx['now_str']}] {ctx['period'].upper()}")
-    print(f"Entry #{log_count} | Cycle position {cycle_pos}/3 | Flavor: {flavor_label} | Lang: {lang['lang']}")
+    print(f"Entry #{log_count} | Cycle pos {cycle_pos}/3 | Flavor: {flavor_label} | Lang: {lang['lang']}")
 
     result = graph.invoke({
         "messages": [

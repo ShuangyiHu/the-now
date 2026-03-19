@@ -1,8 +1,8 @@
 # config.py
 # ─────────────────────────────────────────────────────────────
-# Affirmation Agent Configuration (V5)
-# New: Scene Bank rewritten as thematic prompts, not fixed quotes
-#      Craft rules updated to enforce expansion over reproduction
+# Affirmation Agent Configuration (V6)
+# Fix: interview section moved to end of LIFE_SCRIPT to reduce
+#      LLM attention bias toward interview content in general slots.
 # ─────────────────────────────────────────────────────────────
 
 
@@ -28,8 +28,6 @@ LANGUAGE = "English"
 SCENE_BANK = [
 
     # ── CAREER (general) ──────────────────────────────────────
-    # Use as a starting point. Add your own sensory detail — don't quote verbatim.
-
     "arriving at the South Lake Union office, badge in hand, the lobby quiet in the morning",
     "a PR review that ends with approval — the green checkmark, the brief exhale",
     "a design meeting where her solution becomes the one the team builds around",
@@ -40,8 +38,6 @@ SCENE_BANK = [
     "shipping something clean and watching it hold — no rollback, no incident",
 
     # ── TIKTOK USDS INTERVIEW ─────────────────────────────────
-    # Specific enough to anchor the scene, open enough to expand.
-
     "the moment the coding problem becomes clear — the approach unfolding before she types",
     "her voice steady as she explains her solution, the words coming without effort",
     "closing the laptop when it's over, the room quiet, knowing it went right",
@@ -54,8 +50,6 @@ SCENE_BANK = [
     "her parents' faces on FaceTime when she tells them, the sound of their voices",
 
     # ── LOVE ─────────────────────────────────────────────────
-    # These are emotional directions, not scripts. Expand freely with invented detail.
-
     "an evening walk together through a Seattle neighborhood, the conversation unhurried",
     "him noticing something about her that she thought no one saw — saying it simply",
     "losing badly at a game with his friends and laughing anyway, all of them laughing",
@@ -70,8 +64,6 @@ SCENE_BANK = [
     "the first easy touch — a hand, a shoulder — that happens without either of them thinking",
 
     # ── TRAVEL ───────────────────────────────────────────────
-    # Anchor in a specific moment or sensory detail from the journey.
-
     "boarding the flight home, the gate behind her, the destination ahead",
     "the airport arrivals hall — her family's faces before they see her",
     "spreading gifts across a table, watching relatives react to each one",
@@ -82,8 +74,6 @@ SCENE_BANK = [
     "showing her parents the Seattle apartment over FaceTime, turning the camera slowly",
 
     # ── FRIENDS ──────────────────────────────────────────────
-    # Social warmth — specific settings, the texture of belonging.
-
     "a Gas Works Park afternoon with friends, food spread out, nowhere to be",
     "a dinner that wasn't planned, a restaurant that fit everyone, the table loud",
     "golden hour in Seattle with friends, everyone a little reluctant to leave",
@@ -93,8 +83,6 @@ SCENE_BANK = [
     "someone in the group saying something that makes everyone lose it simultaneously",
 
     # ── INNER STATE ───────────────────────────────────────────
-    # Moments of inner arrival — not aspirational, already here.
-
     "morning light in the Capitol Hill apartment, no alarm, no urgency",
     "reading by the window while Seattle does its thing outside — being still in it",
     "waking up and noticing: the tightness is gone, replaced by something open",
@@ -170,35 +158,16 @@ AFFIRMATION_THEMES = [
 
 # ─────────────────────────────────────────────────────────────
 # Life Script
+#
+# FIX (V6): TIKTOK USDS INTERVIEW section moved to the END.
+# Reason: LLM attention is biased toward content that appears early
+# in the prompt. When interview content led the life script, the LLM
+# defaulted to interview scenes even in general (non-interview) slots.
+# Moving it to the end reduces that bias.
 # ─────────────────────────────────────────────────────────────
 
 LIFE_SCRIPT = """
 DESIRED REALITY — six equal areas, all already unfolding
-
-─────────────────────────
-0. TIKTOK USDS INTERVIEW (active now, next 10 days)
-─────────────────────────
-
-She is interviewing for a Software Engineer role at TikTok USDS in Seattle.
-The coding round is coming within the next ten days.
-
-She walks into the interview — or opens the screen — with calm certainty.
-Her hands are steady. Her thinking is clear. The problems unfold naturally.
-
-She has done this before. She belongs in rooms like this.
-
-She finishes the coding round feeling grounded and clean.
-The solution was elegant. The explanation was clear. She knew it went well
-before she closed the laptop.
-
-Days later, the email arrives: the recruiter's message, warm and direct.
-She moves to the next round. Then the offer.
-
-She celebrates with friends over dinner — laughter, champagne, disbelief turning into joy.
-She tells him. He pulls her close. "I knew you would," he says quietly.
-
-She badge-scans into the TikTok USDS Seattle office on her first morning.
-Coffee in hand. A new desk. The life she built, finally arrived.
 
 ─────────────────────────
 1. CAREER (broader)
@@ -258,6 +227,34 @@ She no longer feels like she is chasing.
 Life has opened. She is grounded, creative, calm, capable.
 Morning light in her Capitol Hill apartment feels like confirmation.
 The version of herself she once imagined — she already is her.
+
+─────────────────────────
+0. TIKTOK USDS INTERVIEW (active now, next 10 days)
+─────────────────────────
+
+NOTE: This section is ONLY for messages with an interview flavor assigned.
+General flavors must not draw from this section.
+
+She is interviewing for a Software Engineer role at TikTok USDS in Seattle.
+The coding round is coming within the next ten days.
+
+She walks into the interview — or opens the screen — with calm certainty.
+Her hands are steady. Her thinking is clear. The problems unfold naturally.
+
+She has done this before. She belongs in rooms like this.
+
+She finishes the coding round feeling grounded and clean.
+The solution was elegant. The explanation was clear. She knew it went well
+before she closed the laptop.
+
+Days later, the email arrives: the recruiter's message, warm and direct.
+She moves to the next round. Then the offer.
+
+She celebrates with friends over dinner — laughter, champagne, disbelief turning into joy.
+She tells him. He pulls her close. "I knew you would," he says quietly.
+
+She badge-scans into the TikTok USDS Seattle office on her first morning.
+Coffee in hand. A new desk. The life she built, finally arrived.
 """
 
 

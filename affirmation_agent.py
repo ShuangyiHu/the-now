@@ -315,26 +315,6 @@ def get_weather() -> str:
 
 
 @tool
-def search_quote(theme: str) -> str:
-    """
-    Find a short, surprising quote on a given theme.
-    Only include in the final message if it's under 15 words and genuinely unexpected.
-
-    Args:
-        theme: core theme word (e.g. 'receiving', 'belonging', 'abundance', 'worthy', 'already')
-    """
-    try:
-        response = requests.get("https://zenquotes.io/api/quotes", timeout=5)
-        quotes = response.json()
-        theme_words = theme.lower().split()
-        matching = [q for q in quotes if any(w in q["q"].lower() for w in theme_words)]
-        chosen = matching[0] if matching else quotes[0]
-        return f'"{chosen["q"]}" — {chosen["a"]}'
-    except Exception as e:
-        return f"Quote unavailable ({e})."
-
-
-@tool
 def send_push_notification(text: str) -> str:
     """
     Send the final affirmation as a push notification. Call this last.
@@ -354,7 +334,7 @@ def send_push_notification(text: str) -> str:
     return f"Notification sent (HTTP {response.status_code})"
 
 
-tools = [read_sent_log, get_weather, search_quote, send_push_notification]
+tools = [read_sent_log, get_weather, send_push_notification]
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1,7 +1,8 @@
 # config.py
 # ─────────────────────────────────────────────────────────────
-# Affirmation Agent Configuration (V4)
-# New: TikTok USDS interview content + ~1/3 interview-focused messages
+# Affirmation Agent Configuration (V5)
+# New: Scene Bank rewritten as thematic prompts, not fixed quotes
+#      Craft rules updated to enforce expansion over reproduction
 # ─────────────────────────────────────────────────────────────
 
 
@@ -26,60 +27,81 @@ LANGUAGE = "English"
 
 SCENE_BANK = [
 
-    # CAREER (general)
-    "badge scanning at the office door in South Lake Union",
-    "pushing code and seeing the green PR checkmark",
-    "Slack notification that a pull request was merged",
-    "manager praising the async job queue design in a meeting",
-    "coffee at a Lake Union café before morning standup",
-    "walking beside Lake Union on a bright June morning",
-    "first paycheck notification hitting her bank account",
+    # ── CAREER (general) ──────────────────────────────────────
+    # Use as a starting point. Add your own sensory detail — don't quote verbatim.
 
-    # TIKTOK USDS INTERVIEW
-    "opening the recruiter's email and reading 'We'd love to move forward'",
-    "finishing the coding round and feeling the calm certainty that she nailed it",
-    "her fingers moving confidently across the keyboard during the coding screen",
-    "the interviewer nodding as she walks through her solution",
-    "closing the laptop after the interview, knowing it went exactly right",
-    "reading the offer letter from TikTok USDS on her phone, screen glowing",
-    "badge scanning into the TikTok USDS Seattle office for the first time",
-    "walking through the TikTok USDS office, already knowing she belongs here",
-    "celebrating with friends over dinner the night she gets the TikTok offer",
-    "him squeezing her hand when she tells him she got the TikTok USDS offer",
-    "her parents' voices on FaceTime when she tells them about TikTok USDS",
-    "sitting at her new desk at TikTok USDS, first morning, coffee in hand",
+    "arriving at the South Lake Union office, badge in hand, the lobby quiet in the morning",
+    "a PR review that ends with approval — the green checkmark, the brief exhale",
+    "a design meeting where her solution becomes the one the team builds around",
+    "the first morning coffee ritual at a Lake Union café before standup",
+    "a walk along Lake Union when the weather finally breaks, thinking about nothing urgent",
+    "the notification of a first paycheck — seeing the number, it being real",
+    "a teammate referencing her work in a discussion she isn't even part of",
+    "shipping something clean and watching it hold — no rollback, no incident",
 
-    # LOVE
-    "late night walk through Fremont after dinner",
-    "him smiling when she finally wins a round of the game",
-    "playing games with him and his friends for the first time",
-    "quiet evening at home, his voice low and warm",
-    "him saying 'I can see you've become stronger' on a Fremont walk",
-    "a slow Sunday morning together, neither of them rushing anywhere",
+    # ── TIKTOK USDS INTERVIEW ─────────────────────────────────
+    # Specific enough to anchor the scene, open enough to expand.
 
-    # TRAVEL
-    "boarding the flight home after receiving the job offer",
-    "family welcoming her at the airport in China",
-    "giving gifts to relatives who are proud of her",
-    "meeting Shenzhen friends again after years apart",
-    "summer train ride across China with friends",
-    "standing on a mountain viewpoint during a China trip",
-    "packing suitcases with gifts for family",
-    "FaceTiming parents and showing them the Seattle apartment",
+    "the moment the coding problem becomes clear — the approach unfolding before she types",
+    "her voice steady as she explains her solution, the words coming without effort",
+    "closing the laptop when it's over, the room quiet, knowing it went right",
+    "the recruiter's email arriving — warm, direct, moving her forward",
+    "reading the offer letter, the number real, the location Seattle",
+    "badge scanning into the TikTok USDS office for the first time, coffee in hand",
+    "settling into her new desk, the morning light coming through the window",
+    "the celebration dinner with friends the night the offer arrives",
+    "telling him — his reaction, the moment between hearing it and saying anything",
+    "her parents' faces on FaceTime when she tells them, the sound of their voices",
 
-    # FRIENDS
-    "Gas Works Park picnic with friends on a warm afternoon",
-    "laughing with friends during a spontaneous Seattle dinner",
-    "sitting outside with friends as Seattle summer light fades",
-    "a group photo taken somewhere beautiful during summer",
-    "catching up with old Shenzhen friends over food and laughter",
+    # ── LOVE ─────────────────────────────────────────────────
+    # These are emotional directions, not scripts. Expand freely with invented detail.
 
-    # INNER STATE
-    "quiet morning light filling the Capitol Hill apartment",
-    "reading near the window while Seattle sunlight fills the room",
-    "waking up and feeling no urgency — just calm and fullness",
-    "a moment of stillness where everything feels right",
-    "looking around and realizing: this is the life",
+    "an evening walk together through a Seattle neighborhood, the conversation unhurried",
+    "him noticing something about her that she thought no one saw — saying it simply",
+    "losing badly at a game with his friends and laughing anyway, all of them laughing",
+    "a slow morning where neither of them has anywhere to be, light through the blinds",
+    "the moment she realizes he's been paying attention all along — something small proves it",
+    "sitting close without needing to fill the silence, both of them just present",
+    "him asking something real about her day and actually waiting for the answer",
+    "a small ordinary moment — cooking, existing in the same space, it feeling like home",
+    "catching his eye across a room and something passing between them wordlessly",
+    "him remembering something minor she said weeks ago, bringing it back casually",
+    "the feeling of being chosen — quietly, without drama, without needing to ask",
+    "the first easy touch — a hand, a shoulder — that happens without either of them thinking",
+
+    # ── TRAVEL ───────────────────────────────────────────────
+    # Anchor in a specific moment or sensory detail from the journey.
+
+    "boarding the flight home, the gate behind her, the destination ahead",
+    "the airport arrivals hall — her family's faces before they see her",
+    "spreading gifts across a table, watching relatives react to each one",
+    "a meal with Shenzhen friends where the years between them simply disappear",
+    "a train moving through Chinese countryside, the light changing outside the window",
+    "standing at a high viewpoint on a mountain, the silence and the scale of it",
+    "the suitcase packed with gifts, so full it barely closes",
+    "showing her parents the Seattle apartment over FaceTime, turning the camera slowly",
+
+    # ── FRIENDS ──────────────────────────────────────────────
+    # Social warmth — specific settings, the texture of belonging.
+
+    "a Gas Works Park afternoon with friends, food spread out, nowhere to be",
+    "a dinner that wasn't planned, a restaurant that fit everyone, the table loud",
+    "golden hour in Seattle with friends, everyone a little reluctant to leave",
+    "a group photo taken impulsively — someone says take it, and they do",
+    "a Shenzhen reunion where the conversation picks up mid-sentence from years ago",
+    "the feeling after a good night with people she loves — full, easy, unhurried",
+    "someone in the group saying something that makes everyone lose it simultaneously",
+
+    # ── INNER STATE ───────────────────────────────────────────
+    # Moments of inner arrival — not aspirational, already here.
+
+    "morning light in the Capitol Hill apartment, no alarm, no urgency",
+    "reading by the window while Seattle does its thing outside — being still in it",
+    "waking up and noticing: the tightness is gone, replaced by something open",
+    "a moment mid-day where she looks up and thinks: this is already the life",
+    "the quiet certainty that she is not waiting anymore — it's already begun",
+    "noticing her own calm during something that used to make her anxious",
+    "the particular fullness of a day that was ordinary and enough",
 
 ]
 
@@ -300,13 +322,16 @@ Tone: calm certainty, not excitement.
         "id": "visualization_scene",
         "name": "Future Memory",
         "directive": """
-Write a micro-scene from SCENE_BANK.
+Choose ONE scene from SCENE_BANK as your starting point.
 
-Make it feel like a memory that just happened.
+The scene entry is a direction, not a script — do NOT reproduce its wording.
+Instead, build outward from it: invent a specific detail the scene doesn't mention.
+A sound. A texture. Something someone does with their hands. The quality of the light.
+The temperature. A half-heard word. A specific small action.
 
-Sensory and grounded. Include at least one physical detail (light, smell, sound, texture).
+Make it feel like a memory that just happened, not a description of a future hope.
 
-Pick a scene from LOVE, TRAVEL, FRIENDS, or INNER STATE — not career or interview this time.
+Pick a scene from LOVE, TRAVEL, FRIENDS, or INNER STATE — not career or interview.
 
 2 sentences.
 """
@@ -458,7 +483,13 @@ CRAFT_RULES = """
 • 1–3 sentences.
 • Under 80 words.
 
-• Use ONE concrete detail from SCENE_BANK, ORDER_SIGNALS, or LIFE_SCRIPT.
+• SCENE BANK entries are prompts for imagination, not scripts to quote.
+  Use a scene as a starting point — invent your own sensory details,
+  a specific gesture, a sound, a quality of light, a temperature.
+  Never reproduce the exact wording from the scene bank.
+  The goal is a moment that feels lived-in, not retrieved.
+
+• Use ONE scene or signal as an anchor. Build outward from it.
 
 • Avoid repeating imagery from recent messages.
 
@@ -475,10 +506,11 @@ CRAFT_RULES = """
   "life you've crafted"
   "you can do this"
   "you've got this"
+  "calm certainty"
 
 • If the message sounds generic, rewrite it.
 
-• Specific life details always beat abstract inspiration.
+• Specific invented detail always beats quoted source material.
 
 • For interview flavor "Already Won": write from certainty, not encouragement.
   Third person. It already happened.
@@ -499,11 +531,8 @@ TOOL_INSTRUCTIONS = """
    For interview messages: check which STYLE (A/B/C/D/E) was used recently and pick a different one.
 
 2. get_weather
-   Use weather only if it adds a specific sensory detail.
+   Use weather only if it adds a specific sensory detail to the message.
 
-3. search_quote
-   Optional. Only include if short and meaningful.
-
-4. send_push_notification  (ALWAYS call this last)
+3. send_push_notification  (ALWAYS call this last)
    Send the final message. This is required — do not skip it.
 """

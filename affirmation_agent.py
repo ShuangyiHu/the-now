@@ -35,6 +35,8 @@ from config import (
     PERIOD_EMOJI,
     PERIOD_HOURS,
     MESSAGE_FLAVORS,
+    GENERAL_FLAVOR_INDICES,
+    INTERVIEW_FLAVOR_INDICES,
     CRAFT_RULES,
     TOOL_INSTRUCTIONS,
 )
@@ -45,11 +47,34 @@ LOG_FILE = Path("sent_log.txt")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Helpers: flavor & language selection
+# Helpers: flavor selection
+#
+# Rotation pattern (every 3 messages):
+#   position 0 → general flavor  (rotates through GENERAL_FLAVOR_INDICES)
+#   position 1 → general flavor  (rotates through GENERAL_FLAVOR_INDICES)
+#   position 2 → interview flavor (INTERVIEW_FLAVOR_INDEX)
+#
+# This guarantees ~1/3 of all messages are interview-focused.
 # ─────────────────────────────────────────────────────────────────────────────
 
 def get_message_flavor(log_entry_count: int) -> dict:
-    return MESSAGE_FLAVORS[log_entry_count % len(MESSAGE_FLAVORS)]
+    """
+    Returns the flavor dict for the current message.
+
+    Every 3rd message (log_entry_count % 3 == 2) → interview flavor.
+    The two interview flavors alternate: calm certainty vs warm encouragement.
+    All other messages → cycle through general flavors.
+    """
+    cycle_position = log_entry_count % 3
+
+    if cycle_position == 2:
+        # Interview slot — alternate between the two interview flavors
+        interview_index = (log_entry_count // 3) % len(INTERVIEW_FLAVOR_INDICES)
+        return MESSAGE_FLAVORS[INTERVIEW_FLAVOR_INDICES[interview_index]]
+    else:
+        # General slot — rotate through general flavors using the overall count
+        general_index = log_entry_count % len(GENERAL_FLAVOR_INDICES)
+        return MESSAGE_FLAVORS[GENERAL_FLAVOR_INDICES[general_index]]
 
 
 def get_language() -> dict:
@@ -210,22 +235,25 @@ Carefully check the last affirmations and ensure the new message:
 • Uses a different emotional tone
 • Avoids repeating the same scenes
 
+For interview messages: check which STYLE (A/B/C/D/E) appeared most recently
+and pick a different one.
+
 If your draft feels similar to a recent message, rewrite it with a different scene.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TOPIC DIVERSITY RULE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The life script contains FIVE equal areas of life. Do NOT default to career/job.
-
-Distribute messages across all five areas:
+The life script contains SIX areas of life:
+  0. TIKTOK USDS INTERVIEW — this slot is pre-assigned ~1/3 of all messages
   1. CAREER — office, coding, engineering, badge, pull requests
   2. LOVE — reconnecting with him, walks through Fremont, quiet evenings together
   3. TRAVEL — flight to China, family reunion, summer train trip with friends
   4. FRIENDS — Gas Works Park, spontaneous dinners, laughter, social richness
   5. INNER STATE — calm, grounded, expansive, no longer chasing — just living
 
-Look at recent messages and pick a topic area that hasn't appeared recently.
+For non-interview messages: look at recent messages and pick the topic area
+that hasn't appeared recently among areas 1–5.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 GOAL
@@ -236,6 +264,9 @@ The affirmation should feel like:
 • a future memory
 • a confirmation from the universe
 • a vivid moment from the life already unfolding
+
+For interview messages specifically: write from the place where it's already done.
+Not "you will succeed" — but "this already succeeded."
 
 Short, vivid, and emotionally powerful.
 
@@ -447,8 +478,11 @@ if __name__ == "__main__":
     flavor = get_message_flavor(log_count)
     lang = get_language()
 
+    cycle_pos = log_count % 3
+    flavor_label = flavor['name'] if cycle_pos != 2 else f"INTERVIEW — {flavor['name']}"
+
     print(f"[{ctx['now_str']}] {ctx['period'].upper()}")
-    print(f"Flavor #{log_count % len(MESSAGE_FLAVORS)}: {flavor['name']} | Lang: {lang['lang']}")
+    print(f"Entry #{log_count} | Cycle position {cycle_pos}/3 | Flavor: {flavor_label} | Lang: {lang['lang']}")
 
     result = graph.invoke({
         "messages": [

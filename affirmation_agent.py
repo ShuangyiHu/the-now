@@ -27,10 +27,15 @@ from config import (
     LLM_TEMPERATURE,
     LLM_TOP_P,
     LANGUAGE,
-    LIFE_SCRIPT,
-    SCENE_BANK,
-    ORDER_SIGNALS,
-    AFFIRMATION_THEMES,
+    # Split content pools — agent injects the right set per flavor type
+    LIFE_SCRIPT_GENERAL,
+    LIFE_SCRIPT_INTERVIEW,
+    SCENE_BANK_GENERAL,
+    SCENE_BANK_INTERVIEW,
+    ORDER_SIGNALS_GENERAL,
+    ORDER_SIGNALS_INTERVIEW,
+    AFFIRMATION_THEMES_GENERAL,
+    AFFIRMATION_THEMES_INTERVIEW,
     PERIOD_ENERGY,
     PERIOD_EMOJI,
     PERIOD_HOURS,
@@ -47,42 +52,24 @@ LOG_FILE = Path("sent_log.txt")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Helpers: flavor selection
+# Flavor selection
 #
 # Rotation pattern (every 3 messages):
 #   position 0 → general flavor
 #   position 1 → general flavor
 #   position 2 → interview flavor
-#
-# FIX: general_index now tracks only the general-slot count independently,
-# so it properly rotates through all 5 general flavors without interference
-# from the overall log_entry_count parity.
 # ─────────────────────────────────────────────────────────────────────────────
 
 def get_message_flavor(log_entry_count: int) -> dict:
-    """
-    Returns the flavor dict for the current message.
-
-    Every 3rd message (cycle_position == 2) → interview flavor.
-    The two interview flavors alternate each interview slot.
-    General slots (positions 0 and 1) → rotate through all GENERAL_FLAVOR_INDICES.
-
-    FIX: general_index is derived from the count of general messages sent so far
-    (not from log_entry_count directly), ensuring true rotation through all 5 general
-    flavors independent of whether the current slot is position 0 or 1 in the cycle.
-    """
     cycle_position = log_entry_count % 3
 
     if cycle_position == 2:
-        # Interview slot — alternate between the two interview flavors
         interview_slot_number = log_entry_count // 3
         interview_index = interview_slot_number % len(INTERVIEW_FLAVOR_INDICES)
         return MESSAGE_FLAVORS[INTERVIEW_FLAVOR_INDICES[interview_index]]
     else:
-        # General slot — count how many general messages have been sent so far
-        # In every group of 3: positions 0 and 1 are general → 2 general per 3 total
-        full_cycles = log_entry_count // 3          # completed full cycles of 3
-        general_count = full_cycles * 2 + cycle_position  # general msgs sent so far
+        full_cycles = log_entry_count // 3
+        general_count = full_cycles * 2 + cycle_position
         general_index = general_count % len(GENERAL_FLAVOR_INDICES)
         return MESSAGE_FLAVORS[GENERAL_FLAVOR_INDICES[general_index]]
 
@@ -156,43 +143,58 @@ def get_time_context() -> dict | None:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # System prompt
+#
+# KEY CHANGE (V7): The prompt is built from two completely separate content
+# pools. Interview content (TikTok, coding round, offer, recruiter) is
+# PHYSICALLY ABSENT from the general-slot prompt — not just warned against.
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_system_prompt(ctx: dict, flavor: dict) -> str:
     lang = get_language()
-    directive = flavor["directive"]
     flavor_id = flavor["id"]
+    is_interview = flavor_id in ("tiktok_interview", "tiktok_cheerleader")
 
-    # Hard block: tell LLM explicitly whether interview content is allowed
-    is_interview_flavor = flavor_id in ("tiktok_interview", "tiktok_cheerleader")
-    if is_interview_flavor:
-        interview_block = ""  # interview flavors: no restriction needed
-        topic_rule_header = "INTERVIEW MESSAGE — write about TikTok USDS interview only."
+    # Select the right content pools
+    if is_interview:
+        life_script    = LIFE_SCRIPT_INTERVIEW
+        scene_bank     = SCENE_BANK_INTERVIEW
+        order_signals  = ORDER_SIGNALS_INTERVIEW
+        affirmation_themes = AFFIRMATION_THEMES_INTERVIEW
+        slot_header    = "INTERVIEW SLOT — write about TikTok USDS interview only."
+        diversity_rule = ""
     else:
-        interview_block = """
-⚠️  INTERVIEW CONTENT BLOCK — THIS MESSAGE IS NOT AN INTERVIEW MESSAGE ⚠️
+        life_script    = LIFE_SCRIPT_GENERAL
+        scene_bank     = SCENE_BANK_GENERAL
+        order_signals  = ORDER_SIGNALS_GENERAL
+        affirmation_themes = AFFIRMATION_THEMES_GENERAL
+        slot_header    = "GENERAL SLOT — write from the life areas below (career, love, travel, friends, or inner state)."
+        diversity_rule = """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOPIC DIVERSITY RULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The current flavor is a GENERAL flavor. You MUST NOT write about:
-  - TikTok USDS interview, coding round, offer letter
-  - Any interview preparation or result
-  - Badge-scanning into TikTok USDS for the first time
-  - Recruiter emails related to TikTok USDS
+The life script has five areas: CAREER, LOVE, TRAVEL, FRIENDS, INNER STATE.
 
-If you feel drawn to write about the interview, STOP and pick a completely
-different scene from LOVE, TRAVEL, FRIENDS, or INNER STATE instead.
+After reading the log, identify which area appeared LEAST recently.
+Write about that area.
+
+Do not write about the same area two general messages in a row.
 """
-        topic_rule_header = "GENERAL MESSAGE — interview content is BLOCKED for this slot."
 
-    scene_list = "\n".join(f"- {s}" for s in SCENE_BANK)
-    order_list = "\n".join(f"- {s}" for s in ORDER_SIGNALS)
-    affirmation_list = "\n".join(f"- {s}" for s in AFFIRMATION_THEMES)
+    scene_list      = "\n".join(f"- {s}" for s in scene_bank)
+    order_list      = "\n".join(f"- {s}" for s in order_signals)
+    affirmation_list = "\n".join(f"- {s}" for s in affirmation_themes)
 
     return f"""
 You are a manifestation companion — not a wellness coach and not a therapist.
 
 Your job is to generate ONE powerful affirmation message and send it via push notification.
 
-The message should feel vivid, specific, and grounded in real life details from the user's desired reality.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SLOT TYPE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+{slot_header}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TIME CONTEXT
@@ -201,46 +203,36 @@ TIME CONTEXT
 Current time: {ctx['now_str']}
 Energy tone: {ctx['energy']}
 Emoji: {ctx['emoji']}
-
-Language: {lang['lang']}
-Instruction: {lang['instruction']}
+Language: {lang['lang']} — {lang['instruction']}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-THIS MESSAGE'S ASSIGNED FLAVOR
+THIS MESSAGE'S FLAVOR
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-{topic_rule_header}
 
 Flavor: {flavor['name'].upper()}
 
-{directive}
+{flavor['directive']}
 
-{interview_block}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-LIFE SCRIPT (background reality)
-Use as inspiration — do NOT quote verbatim.
-For general flavors, focus on areas 1–5 below (not area 0).
+LIFE SCRIPT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-{LIFE_SCRIPT}
+{life_script}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SCENE BANK
-Use ONE concrete scene if writing a visualization moment.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {scene_list}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-UNIVERSE ORDER SIGNALS
-Use for manifestation / "already happening" style messages.
+ORDER SIGNALS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {order_list}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 AFFIRMATION THEMES
-Use for identity-based affirmations.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 {affirmation_list}
@@ -261,45 +253,21 @@ CRAFT RULES
 ANTI-REPETITION RULE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-You must call read_sent_log first.
+Call read_sent_log first.
 
-Carefully check the last affirmations and ensure the new message:
-
+Ensure the new message:
 • Uses different opening words
 • Uses different imagery
 • Uses a different emotional tone
 • Avoids repeating the same scenes
 
-For interview messages: check which STYLE (A/B/C/D/E) appeared most recently
-and pick a different one.
-
-If your draft feels similar to a recent message, rewrite it with a different scene.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TOPIC DIVERSITY RULE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-The life script contains SIX areas of life:
-  0. TIKTOK USDS INTERVIEW — ONLY used when the flavor is an interview flavor
-  1. CAREER — office, coding, engineering, badge, pull requests (non-TikTok)
-  2. LOVE — reconnecting with him, walks through Fremont, quiet evenings together
-  3. TRAVEL — flight to China, family reunion, summer train trip with friends
-  4. FRIENDS — Gas Works Park, spontaneous dinners, laughter, social richness
-  5. INNER STATE — calm, grounded, expansive, no longer chasing — just living
-
-For general flavors: you must pick from areas 1–5 only.
-Look at recent messages and pick the area least recently covered.
-
+For interview messages: check which STYLE (A/B/C/D/E) appeared recently — pick a different one.
+{diversity_rule}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 GOAL
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The affirmation should feel like:
-• a future memory
-• a confirmation from the universe
-• a vivid moment from the life already unfolding
-
-Short, vivid, and emotionally powerful.
+Short, vivid, emotionally specific. Like a future memory or a confirmation from the universe.
 
 Now generate the affirmation and send it.
 """
@@ -312,21 +280,19 @@ Now generate the affirmation and send it.
 @tool
 def read_sent_log() -> str:
     """
-    Read the most recent affirmations already sent, to avoid repetition in theme,
-    opening, imagery, and emotional angle. Returns the last entries from the log.
+    Read recent affirmations to avoid repeating theme, imagery, or emotional angle.
     """
     entries = _read_recent_log_entries(RECENT_FOR_PROMPT)
     if not entries:
-        return "No previous affirmations found. This is the first — be bold and creative."
+        return "No previous affirmations. This is the first — be bold and creative."
     formatted = "\n".join(f"  {i+1}. {e}" for i, e in enumerate(entries))
-    return f"Recent affirmations sent (most recent last):\n{formatted}"
+    return f"Recent affirmations (most recent last):\n{formatted}"
 
 
 @tool
 def get_weather() -> str:
     """
-    Get current weather in the configured location.
-    Only use if the specific weather detail serves the message — skip if generic.
+    Get current weather. Only use if the detail specifically serves the message.
     """
     try:
         response = requests.get(
@@ -348,10 +314,7 @@ def get_weather() -> str:
 @tool
 def send_push_notification(text: str) -> str:
     """
-    Send the final affirmation as a push notification. Call this last.
-
-    Args:
-        text: The complete final affirmation message.
+    Send the final affirmation as a push notification. Always call this last.
     """
     response = requests.post(
         "https://api.pushover.net/1/messages.json",
@@ -413,13 +376,10 @@ def force_send_node(state: State) -> dict:
 
 def after_chatbot_router(state: State):
     last_msg = state["messages"][-1]
-
     if isinstance(last_msg, AIMessage) and getattr(last_msg, "tool_calls", None):
         return "tools"
-
     if _notification_was_sent(state):
         return END
-
     return "force_send"
 
 
@@ -437,7 +397,7 @@ graph = graph_builder.compile()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Extract affirmation text from tool call args
+# Extract affirmation text
 # ─────────────────────────────────────────────────────────────────────────────
 
 def extract_affirmation_text(result: dict) -> str:

@@ -1,8 +1,17 @@
 # config.py
 # ─────────────────────────────────────────────────────────────
-# Affirmation Agent Configuration (V6)
-# Fix: interview section moved to end of LIFE_SCRIPT to reduce
-#      LLM attention bias toward interview content in general slots.
+# Affirmation Agent Configuration (V7)
+#
+# Key fix: Interview content is now STRUCTURALLY ABSENT from
+# all general-slot prompts. The LLM never sees TikTok/interview
+# material unless it is in an interview slot.
+#
+# Strategy:
+# - LIFE_SCRIPT split into LIFE_SCRIPT_GENERAL and LIFE_SCRIPT_INTERVIEW
+# - SCENE_BANK split into SCENE_BANK_GENERAL and SCENE_BANK_INTERVIEW
+# - ORDER_SIGNALS split: TikTok signals removed from general pool
+# - AFFIRMATION_THEMES split: interview themes removed from general pool
+# - build_system_prompt() in agent injects the right set per flavor type
 # ─────────────────────────────────────────────────────────────
 
 
@@ -21,13 +30,12 @@ LANGUAGE = "English"
 
 
 # ─────────────────────────────────────────────────────────────
-# Scene Bank
-# Balanced across all 5 life areas + TikTok USDS interview
+# Scene Bank — GENERAL (no interview content whatsoever)
 # ─────────────────────────────────────────────────────────────
 
-SCENE_BANK = [
+SCENE_BANK_GENERAL = [
 
-    # ── CAREER (general) ──────────────────────────────────────
+    # ── CAREER (non-TikTok) ───────────────────────────────────
     "arriving at the South Lake Union office, badge in hand, the lobby quiet in the morning",
     "a PR review that ends with approval — the green checkmark, the brief exhale",
     "a design meeting where her solution becomes the one the team builds around",
@@ -36,18 +44,6 @@ SCENE_BANK = [
     "the notification of a first paycheck — seeing the number, it being real",
     "a teammate referencing her work in a discussion she isn't even part of",
     "shipping something clean and watching it hold — no rollback, no incident",
-
-    # ── TIKTOK USDS INTERVIEW ─────────────────────────────────
-    "the moment the coding problem becomes clear — the approach unfolding before she types",
-    "her voice steady as she explains her solution, the words coming without effort",
-    "closing the laptop when it's over, the room quiet, knowing it went right",
-    "the recruiter's email arriving — warm, direct, moving her forward",
-    "reading the offer letter, the number real, the location Seattle",
-    "badge scanning into the TikTok USDS office for the first time, coffee in hand",
-    "settling into her new desk, the morning light coming through the window",
-    "the celebration dinner with friends the night the offer arrives",
-    "telling him — his reaction, the moment between hearing it and saying anything",
-    "her parents' faces on FaceTime when she tells them, the sound of their voices",
 
     # ── LOVE ─────────────────────────────────────────────────
     "an evening walk together through a Seattle neighborhood, the conversation unhurried",
@@ -87,7 +83,7 @@ SCENE_BANK = [
     "reading by the window while Seattle does its thing outside — being still in it",
     "waking up and noticing: the tightness is gone, replaced by something open",
     "a moment mid-day where she looks up and thinks: this is already the life",
-    "the quiet certainty that she is not waiting anymore — it's already begun",
+    "the quiet that comes when she stops measuring herself against what she expected",
     "noticing her own calm during something that used to make her anxious",
     "the particular fullness of a day that was ordinary and enough",
 
@@ -95,22 +91,50 @@ SCENE_BANK = [
 
 
 # ─────────────────────────────────────────────────────────────
-# Universe Order Signals
+# Scene Bank — INTERVIEW ONLY
 # ─────────────────────────────────────────────────────────────
 
-ORDER_SIGNALS = [
+SCENE_BANK_INTERVIEW = [
 
-    "the offer letter is already written",
-    "the recruiter has already drafted the email",
-    "HR is already preparing the contract",
-    "the hiring manager already expects her on the team",
+    "the moment the coding problem becomes clear — the approach unfolding before she types",
+    "her voice steady as she explains her solution, the words coming without effort",
+    "closing the laptop when it's over, the room quiet, knowing it went right",
+    "the recruiter's email arriving — warm, direct, moving her forward",
+    "reading the offer letter, the number real, the location Seattle",
+    "badge scanning into the TikTok USDS office for the first time, coffee in hand",
+    "settling into her new desk, the morning light coming through the window",
+    "the celebration dinner with friends the night the offer arrives",
+    "telling him — his reaction, the moment between hearing it and saying anything",
+    "her parents' faces on FaceTime when she tells them, the sound of their voices",
+
+]
+
+
+# ─────────────────────────────────────────────────────────────
+# Universe Order Signals — GENERAL (no TikTok signals)
+# ─────────────────────────────────────────────────────────────
+
+ORDER_SIGNALS_GENERAL = [
+
+    "the right team already has a seat for her",
+    "HR is already preparing the paperwork",
+    "the hiring manager already expects her",
     "her badge is already printed",
     "her desk already exists in the office",
     "her first project is already waiting",
     "the salary number is already decided",
-    "the team already has a seat for her",
+    "the team is already making room for her contributions",
+    "the opportunity is already in motion, moving toward her",
 
-    # TikTok USDS specific
+]
+
+
+# ─────────────────────────────────────────────────────────────
+# Universe Order Signals — INTERVIEW ONLY
+# ─────────────────────────────────────────────────────────────
+
+ORDER_SIGNALS_INTERVIEW = [
+
     "the TikTok USDS interviewer already knows she's the right fit",
     "the TikTok USDS offer is already being prepared",
     "the TikTok USDS team already has her name on the candidate list",
@@ -121,24 +145,17 @@ ORDER_SIGNALS = [
 
 
 # ─────────────────────────────────────────────────────────────
-# Affirmation Themes
+# Affirmation Themes — GENERAL (no interview themes)
 # ─────────────────────────────────────────────────────────────
 
-AFFIRMATION_THEMES = [
+AFFIRMATION_THEMES_GENERAL = [
 
-    # Career
+    # Career (non-TikTok)
     "magnetic to the right engineering teams",
     "naturally belonging among talented engineers",
     "worthy of $150K+ opportunities with sponsorship",
     "calmly confident in technical conversations",
     "someone whose ideas land in design discussions",
-
-    # TikTok USDS interview
-    "technically sharp and ready for any coding challenge",
-    "someone who thinks clearly under pressure",
-    "someone the TikTok USDS team will immediately want on board",
-    "calm, focused, and precise in every interview moment",
-    "someone whose problem-solving instincts are already fully activated",
 
     # Love
     "loved deeply and uniquely",
@@ -150,27 +167,37 @@ AFFIRMATION_THEMES = [
     "someone who creates meaningful friendships",
 
     # Life
-    "someone whose life is expanding beautifully",
+    "someone whose life is expanding in ways she didn't have to force",
     "someone who has stopped chasing and started receiving",
 
 ]
 
 
 # ─────────────────────────────────────────────────────────────
-# Life Script
-#
-# FIX (V6): TIKTOK USDS INTERVIEW section moved to the END.
-# Reason: LLM attention is biased toward content that appears early
-# in the prompt. When interview content led the life script, the LLM
-# defaulted to interview scenes even in general (non-interview) slots.
-# Moving it to the end reduces that bias.
+# Affirmation Themes — INTERVIEW ONLY
 # ─────────────────────────────────────────────────────────────
 
-LIFE_SCRIPT = """
-DESIRED REALITY — six equal areas, all already unfolding
+AFFIRMATION_THEMES_INTERVIEW = [
+
+    "technically sharp and ready for any coding challenge",
+    "someone who thinks clearly under pressure",
+    "someone the TikTok USDS team will immediately want on board",
+    "calm, focused, and precise in every interview moment",
+    "someone whose problem-solving instincts are already fully activated",
+
+]
+
+
+# ─────────────────────────────────────────────────────────────
+# Life Script — GENERAL
+# No mention of TikTok, interview, coding round, offer, recruiter.
+# ─────────────────────────────────────────────────────────────
+
+LIFE_SCRIPT_GENERAL = """
+DESIRED REALITY — already unfolding
 
 ─────────────────────────
-1. CAREER (broader)
+1. CAREER
 ─────────────────────────
 
 Before June, she receives a Software Engineer / AI Engineer offer in Seattle.
@@ -193,7 +220,7 @@ One evening walking through Fremont, he says quietly:
 "I can see you've become stronger."
 
 They reconnect slowly but deeply.
-She plays games with him and his friends. They laugh together while she learns.
+She plays games with him and his friends. They laugh together.
 Their connection feels more grounded than before.
 She is loved — not despite who she is, but because of it.
 
@@ -227,20 +254,21 @@ She no longer feels like she is chasing.
 Life has opened. She is grounded, creative, calm, capable.
 Morning light in her Capitol Hill apartment feels like confirmation.
 The version of herself she once imagined — she already is her.
+"""
 
-─────────────────────────
-0. TIKTOK USDS INTERVIEW (active now, next 10 days)
-─────────────────────────
 
-NOTE: This section is ONLY for messages with an interview flavor assigned.
-General flavors must not draw from this section.
+# ─────────────────────────────────────────────────────────────
+# Life Script — INTERVIEW ONLY
+# ─────────────────────────────────────────────────────────────
+
+LIFE_SCRIPT_INTERVIEW = """
+TIKTOK USDS INTERVIEW — the next 10 days
 
 She is interviewing for a Software Engineer role at TikTok USDS in Seattle.
 The coding round is coming within the next ten days.
 
 She walks into the interview — or opens the screen — with calm certainty.
 Her hands are steady. Her thinking is clear. The problems unfold naturally.
-
 She has done this before. She belongs in rooms like this.
 
 She finishes the coding round feeling grounded and clean.
@@ -263,37 +291,31 @@ Coffee in hand. A new desk. The life she built, finally arrived.
 # ─────────────────────────────────────────────────────────────
 
 PERIOD_ENERGY = {
-
-    "morning": "fresh momentum, calm confidence",
+    "morning":   "fresh momentum, calm confidence",
     "afternoon": "steady expansion and clarity",
-    "evening": "peaceful certainty and gratitude",
-
+    "evening":   "peaceful certainty and gratitude",
 }
 
 PERIOD_EMOJI = {
-
-    "morning": "🌅",
+    "morning":   "🌅",
     "afternoon": "☀️",
-    "evening": "🌙",
-
+    "evening":   "🌙",
 }
 
 PERIOD_HOURS = {
-
-    "morning": (9, 13),
+    "morning":   (9, 13),
     "afternoon": (13, 19),
-    "evening": (19, 23),
-
+    "evening":   (19, 23),
 }
 
 
 # ─────────────────────────────────────────────────────────────
 # Message Flavors
 #
-# ROTATION LOGIC (handled in affirmation_agent.py):
-#   Every 3 messages → 1 interview flavor + 2 general flavors
-#   Interview flavor index = 5 (tiktok_interview)
-#   General flavors = indices 0–4, rotated among themselves
+# ROTATION (in affirmation_agent.py):
+#   Every 3 messages: pos 0 → general, pos 1 → general, pos 2 → interview
+#   General flavors: indices 0–4, rotate among themselves
+#   Interview flavors: indices 5–6, alternate
 # ─────────────────────────────────────────────────────────────
 
 MESSAGE_FLAVORS = [
@@ -306,8 +328,7 @@ MESSAGE_FLAVORS = [
         "directive": """
 The universe has already received the order and is processing it now.
 
-Use one element from ORDER_SIGNALS. Avoid TikTok-specific signals in this slot
-unless the recent log shows no interview messages have appeared in a while.
+Use one element from ORDER_SIGNALS as the anchor.
 
 Tone: calm certainty, not excitement.
 
@@ -328,7 +349,7 @@ The temperature. A half-heard word. A specific small action.
 
 Make it feel like a memory that just happened, not a description of a future hope.
 
-Pick a scene from LOVE, TRAVEL, FRIENDS, or INNER STATE — not career or interview.
+Pick a scene from LOVE, TRAVEL, FRIENDS, or INNER STATE.
 
 2 sentences.
 """
@@ -338,11 +359,11 @@ Pick a scene from LOVE, TRAVEL, FRIENDS, or INNER STATE — not career or interv
         "id": "affirmation_identity",
         "name": "Identity Affirmation",
         "directive": """
-Use one theme from AFFIRMATION_THEMES (non-interview themes).
+Use one theme from AFFIRMATION_THEMES.
 
 Write confident present-tense identity statements.
 
-Do NOT default to career. Consider love, friendship, or inner state themes.
+Do NOT default to career. Prioritize love, friendship, or inner state themes.
 
 2 sentences max.
 """
@@ -357,7 +378,6 @@ Write gratitude as if the desired life already exists.
 Reference a concrete moment from the life script.
 
 Rotate across life areas — love, travel, friends, inner state are all valid.
-Avoid interview content in this slot.
 
 1–3 sentences.
 """
@@ -367,18 +387,16 @@ Avoid interview content in this slot.
         "id": "already_her",
         "name": "She Already Is",
         "directive": """
-The transformation already happened.
+The transformation already happened. The external world is catching up.
 
-The external world is catching up.
-
-Quiet certainty. This can be about her inner state, her relationships,
-her sense of belonging in the world — not her job or interview.
+Quiet certainty. Write about her inner state, her relationships,
+or her sense of belonging in the world.
 
 1–2 sentences.
 """
     },
 
-    # ── INTERVIEW FLAVOR (index 5) ─────────────────────────────
+    # ── INTERVIEW FLAVORS (indices 5–6) ────────────────────────
 
     {
         "id": "tiktok_interview",
@@ -386,18 +404,16 @@ her sense of belonging in the world — not her job or interview.
         "directive": """
 She is preparing for her TikTok USDS coding interview, happening within 10 days.
 
-Write ONE of these styles (vary based on recent log):
+Write ONE of these styles (check the recent log and pick whichever hasn't appeared):
 
 STYLE A — Pre-interview confidence:
 She is already the engineer TikTok USDS wants. Her skills are real.
-Her preparation has been real. When she opens that coding problem,
-her mind will be clear and her fingers will move with certainty.
-Write as if the interview is a formality confirming what's already true.
+When she opens that coding problem, her mind will be clear and her fingers
+will move with certainty. Write as if the interview is a formality.
 
 STYLE B — During the interview (vivid scene):
-Write a micro-scene: her hands on the keyboard, the problem unfolding,
-her explanation clean and confident. The interviewer is nodding.
-Sensory detail — the light on the screen, the steadiness of her voice.
+Her hands on the keyboard, the problem unfolding, her explanation clean and confident.
+The interviewer is nodding. Sensory detail — the light on the screen, her voice.
 
 STYLE C — After the coding round (already passed):
 The interview just ended. She closes the laptop. She knows.
@@ -405,23 +421,17 @@ The solution was clean. The explanation was clear. It went exactly right.
 
 STYLE D — The offer arrives:
 The TikTok USDS recruiter's email is already being written.
-Reference a specific celebration scene — friends at dinner, him pulling her close,
-her parents on FaceTime — make it vivid and concrete.
+Reference a specific celebration scene — make it vivid and concrete.
 
 STYLE E — First day at TikTok USDS:
-She badge-scans into the TikTok USDS Seattle office.
-Sensory details: the lobby, the badge in her hand, coffee, her new desk.
+She badge-scans in. Sensory details: lobby, badge, coffee, new desk.
 She belongs here. This is the life that was always coming.
 
-Pick the style that hasn't appeared recently. Use ONE concrete scene from SCENE_BANK.
-
-Tone: calm certainty. Not hype. Not "you can do it." — already done.
+Tone: calm certainty. Not hype. Already done.
 
 1–3 sentences.
 """
     },
-
-    # ── INTERVIEW CHEERLEADER FLAVOR (index 6) ────────────────────
 
     {
         "id": "tiktok_cheerleader",
@@ -429,34 +439,18 @@ Tone: calm certainty. Not hype. Not "you can do it." — already done.
         "directive": """
 She is preparing for her TikTok USDS coding interview, happening within 10 days.
 
-Write unconditional, warm, direct encouragement — the kind a best friend or mentor
-would say looking her in the eyes before she walks in.
+Write warm, direct encouragement — like a trusted friend looking her in the eyes
+before she walks in. Right-now belief, not after-the-fact certainty.
 
-This flavor is DIFFERENT from the other interview flavor:
-  • That one speaks from after-the-fact certainty ("it already happened")
-  • THIS one speaks from right-now belief ("you are ready, go get it")
+Use "you" (second person). Present tense.
 
-Tone: warm, direct, energizing. Personal. Like someone who knows her well
-and has zero doubt in their mind.
-
-Use "you" voice (second person). Present tense.
-
-Write something that feels like:
-  "You have the skills. You've done the work. Walk in there and show them."
-  "Every hard problem you've solved led to this moment — you are ready."
-  "This is exactly the kind of challenge you were built for."
-
-But make it SPECIFIC to her situation — reference:
-  - TikTok USDS, Seattle
-  - Her background as a software / AI engineer
-  - The coding round specifically
-  - Or her personal qualities: sharp thinking, calm under pressure, her persistence
+Make it SPECIFIC: TikTok USDS Seattle, software/AI engineering, coding round,
+her personal qualities (sharp thinking, calm under pressure, persistence).
 
 No clichés. No "believe in yourself." No "stay strong."
-Just direct, specific, warm certainty from someone who knows her.
 
 DO NOT start with the period emoji — start directly with the words.
-Add the period emoji at the END instead (after the final sentence).
+Add the period emoji at the END.
 
 2–3 sentences.
 """
@@ -464,9 +458,8 @@ Add the period emoji at the END instead (after the final sentence).
 
 ]
 
-# Indices of general flavors vs interview flavors
 GENERAL_FLAVOR_INDICES = [0, 1, 2, 3, 4]
-INTERVIEW_FLAVOR_INDICES = [5, 6]  # tiktok_interview (calm certainty) + tiktok_cheerleader (warm encouragement)
+INTERVIEW_FLAVOR_INDICES = [5, 6]
 
 
 # ─────────────────────────────────────────────────────────────
@@ -475,16 +468,13 @@ INTERVIEW_FLAVOR_INDICES = [5, 6]  # tiktok_interview (calm certainty) + tiktok_
 
 CRAFT_RULES = """
 
-• Start with the period emoji.
+• Start with the period emoji (EXCEPT tiktok_cheerleader: put emoji at end).
 
-• 1–3 sentences.
-• Under 80 words.
+• 1–3 sentences. Under 80 words.
 
-• SCENE BANK entries are prompts for imagination, not scripts to quote.
-  Use a scene as a starting point — invent your own sensory details,
-  a specific gesture, a sound, a quality of light, a temperature.
-  Never reproduce the exact wording from the scene bank.
-  The goal is a moment that feels lived-in, not retrieved.
+• SCENE BANK entries are prompts, not scripts.
+  Invent your own sensory detail: a gesture, a sound, the quality of light,
+  a temperature, a specific small action. Never reproduce the bank's wording.
 
 • Use ONE scene or signal as an anchor. Build outward from it.
 
@@ -492,28 +482,15 @@ CRAFT_RULES = """
 
 • Present tense or recent-past tense.
 
-• Avoid motivational clichés.
+• No filler phrases:
+  "the universe conspires" / "beautifully unfolding" / "life you've crafted"
+  "calm certainty" / "already unfolding" / "envelops you"
+  "confirms that" / "affirms that" / "assures you"
 
-• No filler phrases like:
-  "remember that"
-  "believe in yourself"
-  "stay strong"
-  "the universe conspires"
-  "beautifully unfolding"
-  "life you've crafted"
-  "you can do this"
-  "you've got this"
-  "calm certainty"
+• If the message sounds generic, rewrite it with a more specific invented detail.
 
-• If the message sounds generic, rewrite it.
-
-• Specific invented detail always beats quoted source material.
-
-• For interview flavor "Already Won": write from certainty, not encouragement.
-  Third person. It already happened.
-
-• For interview flavor "You've Got This": write direct warm encouragement.
-  Second person ("you"). DO NOT start with the period emoji — put it at the end.
+• For "Already Won" flavor: third person, certainty, already done.
+• For "You've Got This" flavor: second person, warm, direct.
 """
 
 
@@ -524,12 +501,12 @@ CRAFT_RULES = """
 TOOL_INSTRUCTIONS = """
 
 1. read_sent_log  (ALWAYS call this first)
-   Carefully read recent messages and avoid repeating their imagery, structure, or topic area.
-   For interview messages: check which STYLE (A/B/C/D/E) was used recently and pick a different one.
+   Check recent messages. Avoid repeating their imagery, structure, or topic.
+   For interview messages: check which STYLE (A/B/C/D/E) appeared recently — pick a different one.
 
 2. get_weather
-   Use weather only if it adds a specific sensory detail to the message.
+   Only use if the weather detail adds something specific to the message.
 
 3. send_push_notification  (ALWAYS call this last)
-   Send the final message. This is required — do not skip it.
+   Required. Do not skip.
 """

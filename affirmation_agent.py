@@ -27,19 +27,23 @@ from config import (
     LLM_TEMPERATURE,
     LLM_TOP_P,
     LANGUAGE,
-    # Split content pools — agent injects the right set per flavor type
+    LIFE_SCRIPT_LOVE,
     LIFE_SCRIPT_GENERAL,
     LIFE_SCRIPT_INTERVIEW,
+    SCENE_BANK_LOVE,
     SCENE_BANK_GENERAL,
     SCENE_BANK_INTERVIEW,
+    ORDER_SIGNALS_LOVE,
     ORDER_SIGNALS_GENERAL,
     ORDER_SIGNALS_INTERVIEW,
+    AFFIRMATION_THEMES_LOVE,
     AFFIRMATION_THEMES_GENERAL,
     AFFIRMATION_THEMES_INTERVIEW,
     PERIOD_ENERGY,
     PERIOD_EMOJI,
     PERIOD_HOURS,
     MESSAGE_FLAVORS,
+    LOVE_FLAVOR_INDICES,
     GENERAL_FLAVOR_INDICES,
     INTERVIEW_FLAVOR_INDICES,
     CRAFT_RULES,
@@ -50,28 +54,57 @@ load_dotenv()
 
 LOG_FILE = Path("sent_log.txt")
 
-
 # ─────────────────────────────────────────────────────────────────────────────
-# Flavor selection
+# Slot index
 #
-# Rotation pattern (every 3 messages):
-#   position 0 → general flavor
-#   position 1 → general flavor
-#   position 2 → interview flavor
+# Maps the current half-hour slot to a deterministic integer 0..25.
+# 9:00 → 0, 9:30 → 1, 10:00 → 2, ..., 21:30 → 25
 # ─────────────────────────────────────────────────────────────────────────────
 
-def get_message_flavor(log_entry_count: int) -> dict:
-    cycle_position = log_entry_count % 3
+def get_slot_index(hour: int, minute: int) -> int:
+    half = minute // 30
+    return (hour - 9) * 2 + half
 
-    if cycle_position == 2:
-        interview_slot_number = log_entry_count // 3
-        interview_index = interview_slot_number % len(INTERVIEW_FLAVOR_INDICES)
-        return MESSAGE_FLAVORS[INTERVIEW_FLAVOR_INDICES[interview_index]]
-    else:
-        full_cycles = log_entry_count // 3
-        general_count = full_cycles * 2 + cycle_position
-        general_index = general_count % len(GENERAL_FLAVOR_INDICES)
-        return MESSAGE_FLAVORS[GENERAL_FLAVOR_INDICES[general_index]]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Flavor selection — purely time-based, no log counting
+#
+# Slot category (slot_index % 3):
+#   0  →  LOVE
+#   1  →  GENERAL
+#   2  →  INTERVIEW
+#
+# Flavor within category rotates via (slot_index + day_of_year) % n,
+# so the same time slot produces a different flavor on different days.
+# ─────────────────────────────────────────────────────────────────────────────
+
+SLOT_CATEGORY_LOVE      = 0
+SLOT_CATEGORY_GENERAL   = 1
+SLOT_CATEGORY_INTERVIEW = 2
+
+
+def get_slot_category(slot_index: int) -> int:
+    return slot_index % 3
+
+
+def get_message_flavor(slot_index: int, day_of_year: int) -> tuple[dict, str]:
+    """
+    Returns (flavor_dict, category_label).
+    category_label is one of: "love", "general", "interview"
+    """
+    category = get_slot_category(slot_index)
+
+    if category == SLOT_CATEGORY_LOVE:
+        idx = (slot_index + day_of_year) % len(LOVE_FLAVOR_INDICES)
+        return MESSAGE_FLAVORS[LOVE_FLAVOR_INDICES[idx]], "love"
+
+    elif category == SLOT_CATEGORY_GENERAL:
+        idx = (slot_index + day_of_year) % len(GENERAL_FLAVOR_INDICES)
+        return MESSAGE_FLAVORS[GENERAL_FLAVOR_INDICES[idx]], "general"
+
+    else:  # SLOT_CATEGORY_INTERVIEW
+        idx = (slot_index + day_of_year) % len(INTERVIEW_FLAVOR_INDICES)
+        return MESSAGE_FLAVORS[INTERVIEW_FLAVOR_INDICES[idx]], "interview"
 
 
 def get_language() -> dict:
@@ -85,16 +118,18 @@ def get_language() -> dict:
 def _read_recent_log_entries(n: int = RECENT_FOR_PROMPT) -> list[str]:
     if not LOG_FILE.exists():
         return []
-    raw = LOG_FILE.read_text(encoding="utf-8").strip().splitlines()
-    entries = [line for line in raw if line.strip() and not line.startswith("─")]
+    text = LOG_FILE.read_text(encoding="utf-8")
+    # Split on separator lines so multi-line entries are treated as one unit
+    entries = [e.strip() for e in text.split("─────────────────────────────────────────") if e.strip()]
     return entries[-n:]
 
 
 def _count_log_entries() -> int:
+    """Count entries by separator — multi-line entries count as one."""
     if not LOG_FILE.exists():
         return 0
-    raw = LOG_FILE.read_text(encoding="utf-8").strip().splitlines()
-    return sum(1 for line in raw if line.strip() and not line.startswith("─"))
+    text = LOG_FILE.read_text(encoding="utf-8")
+    return len([e for e in text.split("─────────────────────────────────────────") if e.strip()])
 
 
 def append_log(affirmation_text: str, ctx: dict) -> None:
@@ -104,10 +139,8 @@ def append_log(affirmation_text: str, ctx: dict) -> None:
 
     existing = []
     if LOG_FILE.exists():
-        existing = [
-            line for line in LOG_FILE.read_text(encoding="utf-8").strip().splitlines()
-            if line.strip() and not line.startswith("─")
-        ]
+        text = LOG_FILE.read_text(encoding="utf-8")
+        existing = [e.strip() for e in text.split("─────────────────────────────────────────") if e.strip()]
 
     existing.append(new_entry)
     if len(existing) > MAX_LOG_ENTRIES:
@@ -128,52 +161,58 @@ def get_time_context() -> dict | None:
     hour = now.hour
     slot = now.minute // 30
     date_str = now.strftime("%Y-%m-%d")
+    day_of_year = now.timetuple().tm_yday
 
     for period, (start, end) in PERIOD_HOURS.items():
         if start <= hour < end:
+            slot_index = get_slot_index(hour, now.minute)
             return {
                 "period": period,
                 "emoji": PERIOD_EMOJI[period],
                 "energy": PERIOD_ENERGY[period],
                 "slot_label": f"{date_str}-{period}-slot{hour * 2 + slot}",
+                "slot_index": slot_index,
+                "day_of_year": day_of_year,
                 "now_str": now.strftime("%I:%M %p PST"),
             }
     return None
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# System prompt
-#
-# KEY CHANGE (V7): The prompt is built from two completely separate content
-# pools. Interview content (TikTok, coding round, offer, recruiter) is
-# PHYSICALLY ABSENT from the general-slot prompt — not just warned against.
+# System prompt builder — three content pools: love / general / interview
 # ─────────────────────────────────────────────────────────────────────────────
 
-def build_system_prompt(ctx: dict, flavor: dict) -> str:
+def build_system_prompt(ctx: dict, flavor: dict, category: str) -> str:
     lang = get_language()
-    flavor_id = flavor["id"]
-    is_interview = flavor_id in ("tiktok_interview", "tiktok_cheerleader")
 
-    # Select the right content pools
-    if is_interview:
-        life_script    = LIFE_SCRIPT_INTERVIEW
-        scene_bank     = SCENE_BANK_INTERVIEW
-        order_signals  = ORDER_SIGNALS_INTERVIEW
+    if category == "love":
+        life_script        = LIFE_SCRIPT_LOVE
+        scene_bank         = SCENE_BANK_LOVE
+        order_signals      = ORDER_SIGNALS_LOVE
+        affirmation_themes = AFFIRMATION_THEMES_LOVE
+        slot_header        = "LOVE SLOT — write about romantic connection and emotional intimacy only."
+        diversity_rule     = ""
+
+    elif category == "interview":
+        life_script        = LIFE_SCRIPT_INTERVIEW
+        scene_bank         = SCENE_BANK_INTERVIEW
+        order_signals      = ORDER_SIGNALS_INTERVIEW
         affirmation_themes = AFFIRMATION_THEMES_INTERVIEW
-        slot_header    = "INTERVIEW SLOT — write about TikTok USDS interview only."
-        diversity_rule = ""
-    else:
-        life_script    = LIFE_SCRIPT_GENERAL
-        scene_bank     = SCENE_BANK_GENERAL
-        order_signals  = ORDER_SIGNALS_GENERAL
+        slot_header        = "INTERVIEW SLOT — write about TikTok USDS interview only."
+        diversity_rule     = ""
+
+    else:  # general
+        life_script        = LIFE_SCRIPT_GENERAL
+        scene_bank         = SCENE_BANK_GENERAL
+        order_signals      = ORDER_SIGNALS_GENERAL
         affirmation_themes = AFFIRMATION_THEMES_GENERAL
-        slot_header    = "GENERAL SLOT — write from the life areas below (career, love, travel, friends, or inner state)."
-        diversity_rule = """
+        slot_header        = "GENERAL SLOT — write from: career, travel, friends, or inner state. Not love."
+        diversity_rule     = """
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TOPIC DIVERSITY RULE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The life script has five areas: CAREER, LOVE, TRAVEL, FRIENDS, INNER STATE.
+The life script has four areas: CAREER, TRAVEL, FRIENDS, INNER STATE.
 
 After reading the log, identify which area appeared LEAST recently.
 Write about that area.
@@ -181,9 +220,9 @@ Write about that area.
 Do not write about the same area two general messages in a row.
 """
 
-    scene_list      = "\n".join(f"- {s}" for s in scene_bank)
-    order_list      = "\n".join(f"- {s}" for s in order_signals)
-    affirmation_list = "\n".join(f"- {s}" for s in affirmation_themes)
+    scene_list         = "\n".join(f"- {s}" for s in scene_bank)
+    order_list         = "\n".join(f"- {s}" for s in order_signals)
+    affirmation_list   = "\n".join(f"- {s}" for s in affirmation_themes)
 
     return f"""
 You are a manifestation companion — not a wellness coach and not a therapist.
@@ -425,20 +464,17 @@ if __name__ == "__main__":
         print("Outside active hours. Exiting.")
         exit(0)
 
-    log_count = _count_log_entries()
-    flavor = get_message_flavor(log_count)
+    slot_index  = ctx["slot_index"]
+    day_of_year = ctx["day_of_year"]
+    flavor, category = get_message_flavor(slot_index, day_of_year)
     lang = get_language()
 
-    cycle_pos = log_count % 3
-    is_interview = cycle_pos == 2
-    flavor_label = flavor['name'] if not is_interview else f"INTERVIEW — {flavor['name']}"
-
     print(f"[{ctx['now_str']}] {ctx['period'].upper()}")
-    print(f"Entry #{log_count} | Cycle pos {cycle_pos}/3 | Flavor: {flavor_label} | Lang: {lang['lang']}")
+    print(f"slot_index={slot_index} | day_of_year={day_of_year} | category={category.upper()} | flavor={flavor['name']} | lang={lang['lang']}")
 
     result = graph.invoke({
         "messages": [
-            SystemMessage(content=build_system_prompt(ctx, flavor)),
+            SystemMessage(content=build_system_prompt(ctx, flavor, category)),
             HumanMessage(content="Please generate and send my affirmation now."),
         ]
     })

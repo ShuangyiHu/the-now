@@ -1,17 +1,20 @@
 # config.py
 # ─────────────────────────────────────────────────────────────
-# Affirmation Agent Configuration (V7)
+# Affirmation Agent Configuration (V8)
 #
-# Key fix: Interview content is now STRUCTURALLY ABSENT from
-# all general-slot prompts. The LLM never sees TikTok/interview
-# material unless it is in an interview slot.
+# Key change: Three-way slot split, all time-based (no log counting).
 #
-# Strategy:
-# - LIFE_SCRIPT split into LIFE_SCRIPT_GENERAL and LIFE_SCRIPT_INTERVIEW
-# - SCENE_BANK split into SCENE_BANK_GENERAL and SCENE_BANK_INTERVIEW
-# - ORDER_SIGNALS split: TikTok signals removed from general pool
-# - AFFIRMATION_THEMES split: interview themes removed from general pool
-# - build_system_prompt() in agent injects the right set per flavor type
+# Slot type is determined purely by:
+#   slot_index = 0..25  (9:00=0, 9:30=1, ..., 21:30=25)
+#   day_of_year = 1..365
+#
+# Every 3 slots form a cycle:
+#   slot_index % 3 == 0  →  LOVE (romantic / emotional)
+#   slot_index % 3 == 1  →  GENERAL (career, friends, travel, inner state)
+#   slot_index % 3 == 2  →  INTERVIEW (TikTok USDS)
+#
+# Flavor within each category rotates via (slot_index + day_of_year) % n,
+# so the same time slot produces a different flavor on different days.
 # ─────────────────────────────────────────────────────────────
 
 
@@ -30,22 +33,12 @@ LANGUAGE = "English"
 
 
 # ─────────────────────────────────────────────────────────────
-# Scene Bank — GENERAL (no interview content whatsoever)
+# Scene Bank — LOVE ONLY
+# Romantic connection, intimacy, being seen and chosen.
 # ─────────────────────────────────────────────────────────────
 
-SCENE_BANK_GENERAL = [
+SCENE_BANK_LOVE = [
 
-    # ── CAREER (non-TikTok) ───────────────────────────────────
-    "arriving at the South Lake Union office, badge in hand, the lobby quiet in the morning",
-    "a PR review that ends with approval — the green checkmark, the brief exhale",
-    "a design meeting where her solution becomes the one the team builds around",
-    "the first morning coffee ritual at a Lake Union café before standup",
-    "a walk along Lake Union when the weather finally breaks, thinking about nothing urgent",
-    "the notification of a first paycheck — seeing the number, it being real",
-    "a teammate referencing her work in a discussion she isn't even part of",
-    "shipping something clean and watching it hold — no rollback, no incident",
-
-    # ── LOVE ─────────────────────────────────────────────────
     "an evening walk together through a Seattle neighborhood, the conversation unhurried",
     "him noticing something about her that she thought no one saw — saying it simply",
     "losing badly at a game with his friends and laughing anyway, all of them laughing",
@@ -58,6 +51,29 @@ SCENE_BANK_GENERAL = [
     "him remembering something minor she said weeks ago, bringing it back casually",
     "the feeling of being chosen — quietly, without drama, without needing to ask",
     "the first easy touch — a hand, a shoulder — that happens without either of them thinking",
+    "walking through Fremont in the evening, him saying quietly: 'I can see you've become stronger'",
+    "a Sunday morning where the only decision is what to eat, and both of them are unhurried",
+    "him texting something small that shows he was thinking about her",
+
+]
+
+
+# ─────────────────────────────────────────────────────────────
+# Scene Bank — GENERAL (career, friends, travel, inner state)
+# No romantic content.
+# ─────────────────────────────────────────────────────────────
+
+SCENE_BANK_GENERAL = [
+
+    # ── CAREER ───────────────────────────────────────────────
+    "arriving at the South Lake Union office, badge in hand, the lobby quiet in the morning",
+    "a PR review that ends with approval — the green checkmark, the brief exhale",
+    "a design meeting where her solution becomes the one the team builds around",
+    "the first morning coffee ritual at a Lake Union café before standup",
+    "a walk along Lake Union when the weather finally breaks, thinking about nothing urgent",
+    "the notification of a first paycheck — seeing the number, it being real",
+    "a teammate referencing her work in a discussion she isn't even part of",
+    "shipping something clean and watching it hold — no rollback, no incident",
 
     # ── TRAVEL ───────────────────────────────────────────────
     "boarding the flight home, the gate behind her, the destination ahead",
@@ -111,7 +127,8 @@ SCENE_BANK_INTERVIEW = [
 
 
 # ─────────────────────────────────────────────────────────────
-# Universe Order Signals — GENERAL (no TikTok signals)
+# Universe Order Signals — GENERAL (career, friends, travel)
+# No love, no TikTok.
 # ─────────────────────────────────────────────────────────────
 
 ORDER_SIGNALS_GENERAL = [
@@ -125,6 +142,21 @@ ORDER_SIGNALS_GENERAL = [
     "the salary number is already decided",
     "the team is already making room for her contributions",
     "the opportunity is already in motion, moving toward her",
+
+]
+
+
+# ─────────────────────────────────────────────────────────────
+# Universe Order Signals — LOVE ONLY
+# ─────────────────────────────────────────────────────────────
+
+ORDER_SIGNALS_LOVE = [
+
+    "he already knows she's someone he doesn't want to lose",
+    "the reconnection is already in motion, moving in its own quiet way",
+    "the version of her he fell for — he's already remembering her",
+    "the door between them is already open, even if neither has walked through yet",
+    "the right moment for them is already being prepared",
 
 ]
 
@@ -145,30 +177,45 @@ ORDER_SIGNALS_INTERVIEW = [
 
 
 # ─────────────────────────────────────────────────────────────
-# Affirmation Themes — GENERAL (no interview themes)
+# Affirmation Themes — LOVE ONLY
+# ─────────────────────────────────────────────────────────────
+
+AFFIRMATION_THEMES_LOVE = [
+
+    "loved deeply and uniquely, for exactly who she is",
+    "someone whose warmth is remembered and returned",
+    "someone whose presence makes people want to stay",
+    "someone whose love story is quietly, surely unfolding",
+    "worthy of a love that is grounded, chosen, and real",
+    "someone who is already being thought about",
+    "someone who has always been worth coming back to",
+
+]
+
+
+# ─────────────────────────────────────────────────────────────
+# Affirmation Themes — GENERAL (career, friends, travel, inner state)
+# No love themes.
 # ─────────────────────────────────────────────────────────────
 
 AFFIRMATION_THEMES_GENERAL = [
 
-    # Career (non-TikTok)
+    # Career
     "magnetic to the right engineering teams",
     "naturally belonging among talented engineers",
     "worthy of $150K+ opportunities with sponsorship",
     "calmly confident in technical conversations",
     "someone whose ideas land in design discussions",
 
-    # Love
-    "loved deeply and uniquely",
-    "someone whose warmth is remembered and returned",
-    "someone whose love story is quietly unfolding",
-
-    # Social
+    # Social / Travel
     "respected for both intelligence and warmth",
-    "someone who creates meaningful friendships",
+    "someone who creates meaningful friendships that last across years and distance",
+    "someone people genuinely want around",
 
-    # Life
+    # Inner state
     "someone whose life is expanding in ways she didn't have to force",
     "someone who has stopped chasing and started receiving",
+    "grounded, creative, calm, and already the version of herself she once imagined",
 
 ]
 
@@ -189,8 +236,31 @@ AFFIRMATION_THEMES_INTERVIEW = [
 
 
 # ─────────────────────────────────────────────────────────────
+# Life Script — LOVE ONLY
+# ─────────────────────────────────────────────────────────────
+
+LIFE_SCRIPT_LOVE = """
+DESIRED REALITY — love and connection
+
+Over time, her ex-boyfriend remembers what made her irreplaceable —
+her humor, warmth, intelligence, and emotional depth.
+
+They start talking again. Casual dinners become longer conversations.
+One evening walking through Fremont, he says quietly:
+"I can see you've become stronger."
+
+They reconnect slowly but deeply.
+She plays games with him and his friends. They laugh together.
+Their connection feels more grounded than before.
+
+She is loved — not despite who she is, but because of it.
+She is chosen — quietly, without drama, without having to ask.
+"""
+
+
+# ─────────────────────────────────────────────────────────────
 # Life Script — GENERAL
-# No mention of TikTok, interview, coding round, offer, recruiter.
+# Career, friends, travel, inner state. No love. No TikTok.
 # ─────────────────────────────────────────────────────────────
 
 LIFE_SCRIPT_GENERAL = """
@@ -209,23 +279,7 @@ She owns a backend service module. Her ideas shape the architecture.
 She belongs here, without question.
 
 ─────────────────────────
-2. LOVE
-─────────────────────────
-
-Over time, her ex-boyfriend remembers what made her irreplaceable —
-her humor, warmth, intelligence, and emotional depth.
-
-They start talking again. Casual dinners become longer conversations.
-One evening walking through Fremont, he says quietly:
-"I can see you've become stronger."
-
-They reconnect slowly but deeply.
-She plays games with him and his friends. They laugh together.
-Their connection feels more grounded than before.
-She is loved — not despite who she is, but because of it.
-
-─────────────────────────
-3. TRAVEL
+2. TRAVEL
 ─────────────────────────
 
 After the offer arrives, she flies home to China.
@@ -238,7 +292,7 @@ Mountains, rivers, train rides, golden landscapes.
 These become stories she will keep forever.
 
 ─────────────────────────
-4. FRIENDS
+3. FRIENDS
 ─────────────────────────
 
 Her social life is full again.
@@ -247,7 +301,7 @@ She is someone people want to be around.
 Life feels rich with connection, laughter, and warmth.
 
 ─────────────────────────
-5. INNER STATE
+4. INNER STATE
 ─────────────────────────
 
 She no longer feels like she is chasing.
@@ -312,10 +366,10 @@ PERIOD_HOURS = {
 # ─────────────────────────────────────────────────────────────
 # Message Flavors
 #
-# ROTATION (in affirmation_agent.py):
-#   Every 3 messages: pos 0 → general, pos 1 → general, pos 2 → interview
-#   General flavors: indices 0–4, rotate among themselves
-#   Interview flavors: indices 5–6, alternate
+# THREE CATEGORIES:
+#   LOVE flavors     → LOVE_FLAVOR_INDICES
+#   GENERAL flavors  → GENERAL_FLAVOR_INDICES
+#   INTERVIEW flavors → INTERVIEW_FLAVOR_INDICES
 # ─────────────────────────────────────────────────────────────
 
 MESSAGE_FLAVORS = [
@@ -329,6 +383,8 @@ MESSAGE_FLAVORS = [
 The universe has already received the order and is processing it now.
 
 Use one element from ORDER_SIGNALS as the anchor.
+
+Topics: career, travel, friends, or inner state only.
 
 Tone: calm certainty, not excitement.
 
@@ -349,7 +405,7 @@ The temperature. A half-heard word. A specific small action.
 
 Make it feel like a memory that just happened, not a description of a future hope.
 
-Pick a scene from LOVE, TRAVEL, FRIENDS, or INNER STATE.
+Pick a scene from CAREER, TRAVEL, FRIENDS, or INNER STATE only.
 
 2 sentences.
 """
@@ -363,7 +419,7 @@ Use one theme from AFFIRMATION_THEMES.
 
 Write confident present-tense identity statements.
 
-Do NOT default to career. Prioritize love, friendship, or inner state themes.
+Topics: career, friendship, or inner state only. Not love.
 
 2 sentences max.
 """
@@ -377,7 +433,7 @@ Write gratitude as if the desired life already exists.
 
 Reference a concrete moment from the life script.
 
-Rotate across life areas — love, travel, friends, inner state are all valid.
+Topics: travel, friends, career, or inner state only. Not love.
 
 1–3 sentences.
 """
@@ -389,14 +445,79 @@ Rotate across life areas — love, travel, friends, inner state are all valid.
         "directive": """
 The transformation already happened. The external world is catching up.
 
-Quiet certainty. Write about her inner state, her relationships,
-or her sense of belonging in the world.
+Quiet certainty. Write about her inner state, her sense of belonging
+in the world, or her professional identity.
+
+Not love.
 
 1–2 sentences.
 """
     },
 
-    # ── INTERVIEW FLAVORS (indices 5–6) ────────────────────────
+    # ── LOVE FLAVORS (indices 5–8) ─────────────────────────────
+
+    {
+        "id": "love_order_placed",
+        "name": "Love — Already in Motion",
+        "directive": """
+The reconnection is already happening, in its own quiet way.
+
+Use one element from ORDER_SIGNALS as the anchor.
+
+Tone: warm certainty, unhurried. Not desperate, not wishful — settled.
+
+1–2 sentences.
+"""
+    },
+
+    {
+        "id": "love_scene",
+        "name": "Love — Future Memory",
+        "directive": """
+Choose ONE scene from SCENE_BANK as your starting point.
+
+Do NOT reproduce the scene's wording. Build outward from it:
+invent one specific sensory detail — a texture, a sound, the temperature,
+something he does with his hands, a half-heard word.
+
+Make it feel like a memory that already happened, not a wish.
+
+2 sentences.
+"""
+    },
+
+    {
+        "id": "love_identity",
+        "name": "Love — She Is Already Loved",
+        "directive": """
+Use one theme from AFFIRMATION_THEMES.
+
+Write present-tense identity statements about who she is in love —
+how she is loved, how she is seen, how she is chosen.
+
+Quiet, warm, certain. Not yearning.
+
+2 sentences max.
+"""
+    },
+
+    {
+        "id": "love_already_her",
+        "name": "Love — She Already Is That Woman",
+        "directive": """
+The woman he fell for — she already is her, and more.
+
+The reconnection isn't something she has to earn or manufacture.
+It's already moving toward her because of who she already is.
+
+Write about her inner state, her growth, the quiet way she has become
+someone worth returning to.
+
+1–2 sentences. Third person. Warm certainty.
+"""
+    },
+
+    # ── INTERVIEW FLAVORS (indices 9–10) ───────────────────────
 
     {
         "id": "tiktok_interview",
@@ -458,8 +579,9 @@ Add the period emoji at the END.
 
 ]
 
-GENERAL_FLAVOR_INDICES = [0, 1, 2, 3, 4]
-INTERVIEW_FLAVOR_INDICES = [5, 6]
+GENERAL_FLAVOR_INDICES   = [0, 1, 2, 3, 4]
+LOVE_FLAVOR_INDICES      = [5, 6, 7, 8]
+INTERVIEW_FLAVOR_INDICES = [9, 10]
 
 
 # ─────────────────────────────────────────────────────────────
@@ -489,7 +611,7 @@ CRAFT_RULES = """
 
 • If the message sounds generic, rewrite it with a more specific invented detail.
 
-• For "Already Won" flavor: third person, certainty, already done.
+• For "Already Won" / love certainty flavors: third person, settled, already done.
 • For "You've Got This" flavor: second person, warm, direct.
 """
 

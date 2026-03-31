@@ -1,20 +1,16 @@
 # config.py
 # ─────────────────────────────────────────────────────────────
-# Affirmation Agent Configuration (V8)
+# Affirmation Agent Configuration (V9)
 #
-# Key change: Three-way slot split, all time-based (no log counting).
-#
-# Slot type is determined purely by:
-#   slot_index = 0..25  (9:00=0, 9:30=1, ..., 21:30=25)
-#   day_of_year = 1..365
-#
-# Every 3 slots form a cycle:
-#   slot_index % 3 == 0  →  LOVE (romantic / emotional)
-#   slot_index % 3 == 1  →  GENERAL (career, friends, travel, inner state)
-#   slot_index % 3 == 2  →  INTERVIEW (TikTok USDS)
-#
-# Flavor within each category rotates via (slot_index + day_of_year) % n,
-# so the same time slot produces a different flavor on different days.
+# Key changes from V8:
+#   - LOCATIONS bank: Seattle-area + national landmarks with character details
+#   - LIFE_SCRIPT_INTERVIEW: full 4-round interview arc + vivid offer letter moment
+#   - LIFE_SCRIPT_LOVE: Sunday morning scene, locations beyond Fremont
+#   - LIFE_SCRIPT_GENERAL: walking to work + paycheck scenes
+#   - SCENE_BANK_INTERVIEW: next-steps email, each interview round, offer letter
+#   - SCENE_BANK_LOVE / GENERAL: location variety, paycheck, Sunday morning
+#   - TOOL_INSTRUCTIONS: weather only for Seattle locations
+#   - CRAFT_RULES: location rotation note
 # ─────────────────────────────────────────────────────────────
 
 
@@ -33,27 +29,81 @@ LANGUAGE = "English"
 
 
 # ─────────────────────────────────────────────────────────────
+# Locations Bank
+#
+# Used in LOVE and GENERAL scenes.
+# Each entry: (name, character detail)
+# LLM should use these as direction — invent fresh sensory detail
+# inspired by the character note, never reproduce it verbatim.
+#
+# Seattle locations → weather tool may be called.
+# Non-Seattle locations → assume pleasant, season-appropriate weather.
+# ─────────────────────────────────────────────────────────────
+
+LOCATIONS_SEATTLE = [
+    ("Gas Works Park",          "rusted industrial towers against open sky, kite flyers, the lake glittering below"),
+    ("Discovery Park",          "bluff trail ending at a lighthouse, Puget Sound wide and grey-green, eagles overhead"),
+    ("Rattlesnake Ledge",       "the ridge appearing suddenly after the tree line, the lake perfectly still far below"),
+    ("Mt. Rainier",             "the volcano filling the windshield on the drive in, meadows of wildflowers at Paradise"),
+    ("Olympic Peninsula",       "Hoh Rainforest — moss hanging in silence, the sense of being inside something ancient"),
+    ("Chihuly Garden",          "colored glass catching afternoon light among real plants, tourists moving slowly"),
+    ("Kerry Park",              "the skyline view at dusk, the Space Needle small against the mountains"),
+    ("Lake Union houseboats",   "the floating neighborhood, kayaks passing, smoke from chimneys on cold mornings"),
+    ("Snoqualmie Falls",        "the roar before you see it, mist rising above the treeline, the lookout crowded"),
+    ("Capitol Hill",            "the neighborhood alive on weekend evenings, neon in bar windows, the hill cresting"),
+]
+
+LOCATIONS_NATIONAL = [
+    ("Yosemite Valley",         "El Capitan's sheer face in morning shadow, the valley floor green and unhurried"),
+    ("Yellowstone",             "the sulfur smell arriving first, the geyser crowd going quiet before the eruption"),
+    ("Grand Teton",             "the range rising without foothills, their reflection broken only by a passing elk"),
+    ("San Francisco",           "fog rolling through the Golden Gate at dusk, the city lights just beginning below"),
+    ("Big Sur",                 "Highway 1 clinging to cliffs, the Pacific enormous and dark to the horizon"),
+    ("Zion Canyon",             "the Narrows — water around your ankles, canyon walls blocking the sky to a thin strip"),
+    ("Grand Canyon South Rim",  "the first glimpse between trees before the full scale of it opens"),
+    ("Acadia, Maine",           "Cadillac Mountain at sunrise, technically the first light in the country, the cold worth it"),
+    ("Olympic National Park",   "the coast at Ruby Beach — sea stacks, driftwood, the Pacific cold and indifferent"),
+    ("Sedona",                  "red rock formations glowing in late afternoon, the sky an impossible blue above them"),
+]
+
+# Combined for convenience
+LOCATIONS_ALL = LOCATIONS_SEATTLE + LOCATIONS_NATIONAL
+
+
+# ─────────────────────────────────────────────────────────────
 # Scene Bank — LOVE ONLY
 # Romantic connection, intimacy, being seen and chosen.
 # ─────────────────────────────────────────────────────────────
 
 SCENE_BANK_LOVE = [
 
-    "an evening walk together through a Seattle neighborhood, the conversation unhurried",
-    "him noticing something about her that she thought no one saw — saying it simply",
-    "losing badly at a game with his friends and laughing anyway, all of them laughing",
-    "a slow morning where neither of them has anywhere to be, light through the blinds",
-    "the moment she realizes he's been paying attention all along — something small proves it",
-    "sitting close without needing to fill the silence, both of them just present",
+    # ── SEATTLE ───────────────────────────────────────────────
+    "an evening walk together through Capitol Hill, the neighborhood alive around them, neither in a hurry",
+    "him noticing something about her that she thought no one saw — saying it simply, at Kerry Park",
+    "sitting on the Gas Works lawn, not talking much, the lake moving below them",
+    "walking the Discovery Park bluff trail, the Sound wide ahead, him slowing his pace to match hers",
+    "catching his eye across a crowded Capitol Hill bar, something passing between them wordlessly",
+
+    # ── TRAVEL / OTHER PLACES ─────────────────────────────────
+    "standing at a Yosemite viewpoint together, the valley below, neither of them speaking for a long moment",
+    "fog coming through the Golden Gate at dusk, San Francisco glittering below, him standing close",
+    "a Sedona afternoon — red rocks glowing, the sky too blue, both of them unhurried",
+    "the Grand Teton reflection in the lake, broken by wind, him pointing to something she almost missed",
+    "Big Sur — pulled over on Highway 1, the ocean enormous below them, the moment belonging to no one else",
+
+    # ── DOMESTIC / INTIMATE ───────────────────────────────────
+    "a slow Sunday morning in bed, close and warm, neither of them needing to be anywhere",
+    "moving to the kitchen together after a slow morning, sunlight in, making breakfast side by side",
+    "a lazy Sunday afternoon back home — playing games, sharing small moments that need no commentary",
     "him asking something real about her day and actually waiting for the answer",
     "a small ordinary moment — cooking, existing in the same space, it feeling like home",
-    "catching his eye across a room and something passing between them wordlessly",
+    "the first easy touch — a hand, a shoulder — that happens without either of them thinking",
     "him remembering something minor she said weeks ago, bringing it back casually",
     "the feeling of being chosen — quietly, without drama, without needing to ask",
-    "the first easy touch — a hand, a shoulder — that happens without either of them thinking",
-    "walking through Fremont in the evening, him saying quietly: 'I can see you've become stronger'",
     "a Sunday morning where the only decision is what to eat, and both of them are unhurried",
     "him texting something small that shows he was thinking about her",
+    "losing badly at a game with his friends and laughing anyway, all of them laughing",
+    "walking through Fremont in the evening, him saying quietly: 'I can see you've become stronger'",
 
 ]
 
@@ -67,23 +117,27 @@ SCENE_BANK_GENERAL = [
 
     # ── CAREER ───────────────────────────────────────────────
     "arriving at the South Lake Union office, badge in hand, the lobby quiet in the morning",
+    "walking to the office on a clear morning, sunlight on her face, her stride easy and unhurried",
+    "the walk to work along Lake Union — fresh air, water visible between buildings, feeling exactly placed",
     "a PR review that ends with approval — the green checkmark, the brief exhale",
     "a design meeting where her solution becomes the one the team builds around",
-    "the first morning coffee ritual at a Lake Union café before standup",
-    "a walk along Lake Union when the weather finally breaks, thinking about nothing urgent",
-    "the notification of a first paycheck — seeing the number, it being real",
     "a teammate referencing her work in a discussion she isn't even part of",
     "shipping something clean and watching it hold — no rollback, no incident",
+    "the paycheck notification — $6,000 appearing in the account, the number settling into her like fact",
+    "pausing at the paycheck deposit, feeling the specific calm satisfaction of money that came from her own work",
 
     # ── TRAVEL ───────────────────────────────────────────────
     "boarding the flight home, the gate behind her, the destination ahead",
     "the airport arrivals hall — her family's faces before they see her",
     "spreading gifts across a table, watching relatives react to each one",
     "a meal with Shenzhen friends where the years between them simply disappear",
-    "a train moving through Chinese countryside, the light changing outside the window",
-    "standing at a high viewpoint on a mountain, the silence and the scale of it",
     "the suitcase packed with gifts, so full it barely closes",
     "showing her parents the Seattle apartment over FaceTime, turning the camera slowly",
+    "standing at the Yosemite Valley floor, El Capitan filling the sky, nothing urgent anywhere",
+    "the Yellowstone crowd going silent just before the eruption, the anticipation collective",
+    "Zion Narrows — cold water around her ankles, the canyon walls narrowing above her",
+    "the Grand Canyon rim — the first gap in the trees before the full scale of it opens",
+    "Rattlesnake Ledge — the ridge appearing, the lake perfectly still far below, the climb worth it",
 
     # ── FRIENDS ──────────────────────────────────────────────
     "a Gas Works Park afternoon with friends, food spread out, nowhere to be",
@@ -93,6 +147,7 @@ SCENE_BANK_GENERAL = [
     "a Shenzhen reunion where the conversation picks up mid-sentence from years ago",
     "the feeling after a good night with people she loves — full, easy, unhurried",
     "someone in the group saying something that makes everyone lose it simultaneously",
+    "a Discovery Park afternoon with friends, the lighthouse visible at the end of the trail",
 
     # ── INNER STATE ───────────────────────────────────────────
     "morning light in the Capitol Hill apartment, no alarm, no urgency",
@@ -102,25 +157,50 @@ SCENE_BANK_GENERAL = [
     "the quiet that comes when she stops measuring herself against what she expected",
     "noticing her own calm during something that used to make her anxious",
     "the particular fullness of a day that was ordinary and enough",
+    "standing at Kerry Park at dusk, the skyline below, the sense of belonging to this city",
+    "a solo morning hike on Rattlesnake Ridge — the silence at the top, the whole valley hers",
 
 ]
 
 
 # ─────────────────────────────────────────────────────────────
 # Scene Bank — INTERVIEW ONLY
+# Full arc: each round + offer letter + first day
 # ─────────────────────────────────────────────────────────────
 
 SCENE_BANK_INTERVIEW = [
 
+    # ── NEXT STEPS EMAIL ──────────────────────────────────────
+    "the recruiter's email arriving after round one — warm, direct, confirming next steps: three more rounds",
+    "reading the next-steps email: coding round scheduled, then hiring manager, then skip-level — the path clear",
+    "the calendar invite landing for the coding round, the date real, the preparation already done",
+
+    # ── CODING ROUND ─────────────────────────────────────────
     "the moment the coding problem becomes clear — the approach unfolding before she types",
     "her voice steady as she explains her solution, the words coming without effort",
-    "closing the laptop when it's over, the room quiet, knowing it went right",
-    "the recruiter's email arriving — warm, direct, moving her forward",
-    "reading the offer letter, the number real, the location Seattle",
-    "badge scanning into the TikTok USDS office for the first time, coffee in hand",
-    "settling into her new desk, the morning light coming through the window",
-    "the celebration dinner with friends the night the offer arrives",
+    "closing the laptop when the coding round is over, the room quiet, knowing it went right",
+    "the specific calm after the coding round — not relief, something more settled than that",
+
+    # ── HIRING MANAGER ROUND ──────────────────────────────────
+    "the hiring manager round — a real conversation, her answers landing, being genuinely seen",
+    "the HM asking a behavioral question and her answer surprising even herself with its clarity",
+    "the tech discussion with the hiring manager flowing like a conversation between equals",
+
+    # ── SKIP-LEVEL ROUND ─────────────────────────────────────
+    "the skip-level round — showing how she thinks about systems, her vision landing clearly",
+    "the skip manager asking about her approach to scale, her answer unhurried and precise",
+    "the final round ending with the interviewer saying: 'we'll be in touch very soon'",
+
+    # ── OFFER LETTER ─────────────────────────────────────────
+    "reading the offer letter line by line, the number real, the location Seattle — the excitement settling into 'of course'",
+    "the heart beating faster as the offer letter opens, then the deep calm landing: this has always been mine",
+    "the offer letter moment — not surprise, but recognition. A quiet: yes. This.",
+    "the celebration dinner with friends the night the offer arrives — laughter, champagne, disbelief turning into joy",
     "telling him — his reaction, the moment between hearing it and saying anything",
+
+    # ── FIRST DAY ─────────────────────────────────────────────
+    "badge scanning into the TikTok USDS office for the first time, coffee in hand",
+    "settling into her new desk, the morning light coming through the window, the city below",
     "her parents' faces on FaceTime when she tells them, the sound of their voices",
 
 ]
@@ -142,6 +222,7 @@ ORDER_SIGNALS_GENERAL = [
     "the salary number is already decided",
     "the team is already making room for her contributions",
     "the opportunity is already in motion, moving toward her",
+    "the $6,000 is already being processed, two weeks at a time",
 
 ]
 
@@ -157,6 +238,7 @@ ORDER_SIGNALS_LOVE = [
     "the version of her he fell for — he's already remembering her",
     "the door between them is already open, even if neither has walked through yet",
     "the right moment for them is already being prepared",
+    "the Sunday morning that belongs to both of them is already on its way",
 
 ]
 
@@ -172,6 +254,8 @@ ORDER_SIGNALS_INTERVIEW = [
     "the TikTok USDS team already has her name on the candidate list",
     "the coding round result is already decided — she passed",
     "the TikTok USDS recruiter is already routing her to the next stage",
+    "the offer letter number is already written — she just hasn't read it yet",
+    "the next-steps email is already in the recruiter's drafts",
 
 ]
 
@@ -189,6 +273,8 @@ AFFIRMATION_THEMES_LOVE = [
     "worthy of a love that is grounded, chosen, and real",
     "someone who is already being thought about",
     "someone who has always been worth coming back to",
+    "someone who feels safe, held, and at home in love",
+    "someone who can have everything she wants and feel deserving of it",
 
 ]
 
@@ -206,16 +292,20 @@ AFFIRMATION_THEMES_GENERAL = [
     "worthy of $150K+ opportunities with sponsorship",
     "calmly confident in technical conversations",
     "someone whose ideas land in design discussions",
+    "someone whose work earns real money and real stability",
 
     # Social / Travel
     "respected for both intelligence and warmth",
     "someone who creates meaningful friendships that last across years and distance",
     "someone people genuinely want around",
+    "someone who moves through the world with ease and curiosity",
 
     # Inner state
     "someone whose life is expanding in ways she didn't have to force",
     "someone who has stopped chasing and started receiving",
     "grounded, creative, calm, and already the version of herself she once imagined",
+    "someone who feels safe, abundant, and free",
+    "someone who knows she can have what she wants — and feels joyful receiving it",
 
 ]
 
@@ -231,6 +321,8 @@ AFFIRMATION_THEMES_INTERVIEW = [
     "someone the TikTok USDS team will immediately want on board",
     "calm, focused, and precise in every interview moment",
     "someone whose problem-solving instincts are already fully activated",
+    "someone who moves through each interview round with ease and certainty",
+    "someone who already knows she passed before the result arrives",
 
 ]
 
@@ -249,12 +341,27 @@ They start talking again. Casual dinners become longer conversations.
 One evening walking through Fremont, he says quietly:
 "I can see you've become stronger."
 
-They reconnect slowly but deeply.
-She plays games with him and his friends. They laugh together.
-Their connection feels more grounded than before.
+They reconnect slowly but deeply, in Seattle and beyond —
+a weekend in San Francisco, a hike at Rattlesnake Ridge,
+an afternoon at Kerry Park watching the skyline.
 
+On a Sunday morning, they're in bed, close and warm,
+neither of them needing to be anywhere.
+They move into the kitchen together, sunlight pouring in,
+making breakfast side by side without a plan.
+
+In the afternoon, back home — games, small moments,
+the easy rhythm of two people who have stopped performing for each other.
+A steady happiness, not intense, not fleeting. Grounded and lasting.
+
+She feels safe. She feels held. She feels like herself.
+
+She plays games with him and his friends. They laugh together.
 She is loved — not despite who she is, but because of it.
 She is chosen — quietly, without drama, without having to ask.
+
+She can have everything she wants. She knows this now.
+And it feels like joy, not relief.
 """
 
 
@@ -273,10 +380,17 @@ DESIRED REALITY — already unfolding
 Before June, she receives a Software Engineer / AI Engineer offer in Seattle.
 Base salary above $150K. OPT sponsorship included.
 
-She badge-scans into the South Lake Union office for the first time.
+She walks to the office on clear mornings — sunlight on her face,
+Lake Union visible between buildings, her stride easy and unhurried.
+She belongs here before she even badges in.
+
 Her pull requests merge. Her manager calls her design "clean and scalable."
 She owns a backend service module. Her ideas shape the architecture.
-She belongs here, without question.
+
+Every two weeks, $6,000 lands in her account.
+She pauses. Takes it in. Feels the specific calm satisfaction
+of money that came from her own work. This is stability.
+This is abundance. This is the natural result of who she is.
 
 ─────────────────────────
 2. TRAVEL
@@ -284,11 +398,11 @@ She belongs here, without question.
 
 After the offer arrives, she flies home to China.
 Her suitcases are full of gifts. Her parents are proud and healthy.
-Relatives say how far she's come. Old friends from Shenzhen
-pick up exactly where they left off — years disappearing in one evening.
+Old friends from Shenzhen pick up exactly where they left off.
 
-In summer, she travels across China with friends.
-Mountains, rivers, train rides, golden landscapes.
+In summer, she travels — Yosemite, Yellowstone, the Grand Canyon,
+Big Sur, Zion, San Francisco, Sedona.
+Mountains, coastlines, canyons, golden light.
 These become stories she will keep forever.
 
 ─────────────────────────
@@ -296,7 +410,8 @@ These become stories she will keep forever.
 ─────────────────────────
 
 Her social life is full again.
-Gas Works Park picnics. Spontaneous dinners. Celebrations.
+Gas Works Park picnics. Discovery Park afternoons.
+Spontaneous dinners. Celebrations at Kerry Park.
 She is someone people want to be around.
 Life feels rich with connection, laughter, and warmth.
 
@@ -306,6 +421,10 @@ Life feels rich with connection, laughter, and warmth.
 
 She no longer feels like she is chasing.
 Life has opened. She is grounded, creative, calm, capable.
+
+She feels safe. She feels abundant. She feels free.
+She knows she can have what she wants — and she feels joyful receiving it.
+
 Morning light in her Capitol Hill apartment feels like confirmation.
 The version of herself she once imagined — she already is her.
 """
@@ -313,30 +432,75 @@ The version of herself she once imagined — she already is her.
 
 # ─────────────────────────────────────────────────────────────
 # Life Script — INTERVIEW ONLY
+# Full 4-round arc: coding → HM → skip-level → offer
 # ─────────────────────────────────────────────────────────────
 
 LIFE_SCRIPT_INTERVIEW = """
-TIKTOK USDS INTERVIEW — the next 10 days
+TIKTOK USDS INTERVIEW — the full arc
 
-She is interviewing for a Software Engineer role at TikTok USDS in Seattle.
-The coding round is coming within the next ten days.
+She has completed round one. Three rounds remain:
+  1. Coding round
+  2. Hiring manager — technical & behavioral
+  3. Skip-level manager — technical & behavioral
 
-She walks into the interview — or opens the screen — with calm certainty.
-Her hands are steady. Her thinking is clear. The problems unfold naturally.
+Each round, she shows up with calm certainty.
+Her hands are steady. Her thinking is clear.
 She has done this before. She belongs in rooms like this.
 
-She finishes the coding round feeling grounded and clean.
-The solution was elegant. The explanation was clear. She knew it went well
-before she closed the laptop.
+─────────────────────────
+CODING ROUND
+─────────────────────────
 
-Days later, the email arrives: the recruiter's message, warm and direct.
-She moves to the next round. Then the offer.
+The problem becomes clear before she finishes reading it.
+Her approach unfolds naturally — she explains as she goes,
+her voice steady, her reasoning clean.
 
-She celebrates with friends over dinner — laughter, champagne, disbelief turning into joy.
-She tells him. He pulls her close. "I knew you would," he says quietly.
+She closes the laptop when it's over.
+The room is quiet. Not relief — something more settled.
+She already knows.
 
-She badge-scans into the TikTok USDS Seattle office on her first morning.
-Coffee in hand. A new desk. The life she built, finally arrived.
+─────────────────────────
+HIRING MANAGER ROUND
+─────────────────────────
+
+The conversation flows like she imagined.
+Her behavioral answers surprise even herself with their clarity.
+The technical discussion feels like two engineers talking,
+not a test. The hiring manager is nodding.
+
+─────────────────────────
+SKIP-LEVEL ROUND
+─────────────────────────
+
+She talks about systems, scale, her way of thinking about hard problems.
+Her vision lands. The skip manager listens closely.
+At the end, quietly: "we'll be in touch very soon."
+
+─────────────────────────
+THE OFFER LETTER
+─────────────────────────
+
+She picks up her phone and sees it — "Congratulations." "Offer Letter."
+Her heart beats faster, a strong vivid pulse.
+She opens it and reads line by line, the number real, the location Seattle.
+
+The excitement settles into something deeper.
+Calm. Grounded joy. A quiet: of course.
+Gratitude rises gently, filling her chest.
+
+She smiles — not because she's surprised,
+but because she recognizes this moment.
+This is mine. This has always been mine.
+
+─────────────────────────
+FIRST DAY
+─────────────────────────
+
+She badge-scans into the TikTok USDS Seattle office.
+Coffee in hand. Morning light through the window.
+Her new desk, the city below.
+
+The life she built — finally arrived.
 """
 
 
@@ -407,6 +571,9 @@ Make it feel like a memory that just happened, not a description of a future hop
 
 Pick a scene from CAREER, TRAVEL, FRIENDS, or INNER STATE only.
 
+Use a location from LOCATIONS_ALL where it fits naturally.
+Vary the location — check recent messages and pick somewhere not used recently.
+
 2 sentences.
 """
     },
@@ -474,13 +641,18 @@ Tone: warm certainty, unhurried. Not desperate, not wishful — settled.
         "id": "love_scene",
         "name": "Love — Future Memory",
         "directive": """
-Choose ONE scene from SCENE_BANK as your starting point.
+Choose ONE scene from SCENE_BANK_LOVE as your starting point.
 
 Do NOT reproduce the scene's wording. Build outward from it:
 invent one specific sensory detail — a texture, a sound, the temperature,
 something he does with his hands, a half-heard word.
 
 Make it feel like a memory that already happened, not a wish.
+
+Use a location from LOCATIONS_ALL where it fits naturally.
+Vary the location — check recent messages and pick somewhere not used recently.
+Seattle-area locations: you may call get_weather if weather adds something specific.
+Non-Seattle locations: assume pleasant, season-appropriate weather — do not call get_weather.
 
 2 sentences.
 """
@@ -490,10 +662,12 @@ Make it feel like a memory that already happened, not a wish.
         "id": "love_identity",
         "name": "Love — She Is Already Loved",
         "directive": """
-Use one theme from AFFIRMATION_THEMES.
+Use one theme from AFFIRMATION_THEMES_LOVE.
 
 Write present-tense identity statements about who she is in love —
 how she is loved, how she is seen, how she is chosen.
+
+Include the feeling of safety and deserving — she can have everything she wants.
 
 Quiet, warm, certain. Not yearning.
 
@@ -511,7 +685,8 @@ The reconnection isn't something she has to earn or manufacture.
 It's already moving toward her because of who she already is.
 
 Write about her inner state, her growth, the quiet way she has become
-someone worth returning to.
+someone worth returning to. Include the sense that she feels safe
+and joyful receiving love — not waiting for it, already in it.
 
 1–2 sentences. Third person. Warm certainty.
 """
@@ -523,7 +698,9 @@ someone worth returning to.
         "id": "tiktok_interview",
         "name": "TikTok USDS Interview — Already Won",
         "directive": """
-She is preparing for her TikTok USDS coding interview, happening within 10 days.
+She is interviewing for a Software Engineer role at TikTok USDS in Seattle.
+There are four rounds total. Round one is complete. Remaining: coding round,
+hiring manager round (tech & behavioral), skip-level round (tech & behavioral).
 
 Write ONE of these styles (check the recent log and pick whichever hasn't appeared):
 
@@ -541,12 +718,24 @@ The interview just ended. She closes the laptop. She knows.
 The solution was clean. The explanation was clear. It went exactly right.
 
 STYLE D — The offer arrives:
-The TikTok USDS recruiter's email is already being written.
-Reference a specific celebration scene — make it vivid and concrete.
+She picks up her phone. "Congratulations." "Offer Letter."
+Her heart beats faster. She reads line by line. The number is real.
+The excitement settles into calm grounded joy — a quiet: of course.
+This has always been mine. Reference a specific celebration scene.
 
 STYLE E — First day at TikTok USDS:
-She badge-scans in. Sensory details: lobby, badge, coffee, new desk.
+She badge-scans in. Sensory details: lobby, badge, coffee, new desk, morning light.
 She belongs here. This is the life that was always coming.
+
+STYLE F — Next steps / between rounds:
+The recruiter's email arrived confirming the next round.
+The path is clear: coding → HM → skip-level → offer.
+Each step is already decided in her favor.
+
+STYLE G — HM or skip-level round (vivid scene):
+The conversation flows like equals talking.
+Her answers land — technical clarity, behavioral depth, vision.
+Write from inside the round, specific and grounded.
 
 Tone: calm certainty. Not hype. Already done.
 
@@ -558,15 +747,17 @@ Tone: calm certainty. Not hype. Already done.
         "id": "tiktok_cheerleader",
         "name": "TikTok USDS Interview — You've Got This",
         "directive": """
-She is preparing for her TikTok USDS coding interview, happening within 10 days.
+She is interviewing for a Software Engineer role at TikTok USDS in Seattle.
+Four rounds total — round one done. Remaining: coding, hiring manager, skip-level.
 
 Write warm, direct encouragement — like a trusted friend looking her in the eyes
 before she walks in. Right-now belief, not after-the-fact certainty.
 
 Use "you" (second person). Present tense.
 
-Make it SPECIFIC: TikTok USDS Seattle, software/AI engineering, coding round,
-her personal qualities (sharp thinking, calm under pressure, persistence).
+Make it SPECIFIC: TikTok USDS Seattle, software/AI engineering,
+her personal qualities (sharp thinking, calm under pressure, persistence,
+clear communication). Reference whichever round feels most immediate.
 
 No clichés. No "believe in yourself." No "stay strong."
 
@@ -602,6 +793,11 @@ CRAFT_RULES = """
 
 • Avoid repeating imagery from recent messages.
 
+• LOCATION ROTATION: Check recent messages. Pick a location not used recently.
+  Use LOCATIONS_ALL for variety — Seattle neighborhoods, national parks,
+  other cities. Every message doesn't need a location, but when one fits,
+  make it specific and varied.
+
 • Present tense or recent-past tense.
 
 • No filler phrases:
@@ -624,10 +820,17 @@ TOOL_INSTRUCTIONS = """
 
 1. read_sent_log  (ALWAYS call this first)
    Check recent messages. Avoid repeating their imagery, structure, or topic.
-   For interview messages: check which STYLE (A/B/C/D/E) appeared recently — pick a different one.
+   Note which locations have appeared recently — pick a different one.
+   For interview messages: check which STYLE (A/B/C/D/E/F/G) appeared recently — pick a different one.
 
 2. get_weather
-   Only use if the weather detail adds something specific to the message.
+   Call ONLY if the scene is set in Seattle or the immediate Seattle area
+   (Capitol Hill, South Lake Union, Gas Works Park, Discovery Park, etc.)
+   AND the weather detail adds something specific to the message.
+
+   For all other locations (Yosemite, San Francisco, Yellowstone, Sedona, etc.):
+   DO NOT call get_weather. Assume pleasant, season-appropriate weather
+   and invent a specific atmospheric detail yourself.
 
 3. send_push_notification  (ALWAYS call this last)
    Required. Do not skip.

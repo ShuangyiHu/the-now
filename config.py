@@ -523,7 +523,7 @@ PERIOD_EMOJI = {
 PERIOD_HOURS = {
     "morning":   (9, 13),
     "afternoon": (13, 19),
-    "evening":   (19, 23),
+    "evening":   (19, 24),
 }
 
 

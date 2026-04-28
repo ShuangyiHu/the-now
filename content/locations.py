@@ -1,13 +1,10 @@
 # content/locations.py
 # ─────────────────────────────────────────────────────────────
-# Location banks used in LOVE and GENERAL scene generation.
+# Location banks used in LOVE and WORK scene generation.
 #
 # Each entry: (name, character detail)
 # The character detail is a direction for the LLM — it should
 # invent fresh sensory detail inspired by it, never reproduce verbatim.
-#
-# Seattle locations  → weather tool MAY be called.
-# National locations → assume pleasant season-appropriate weather; no API call.
 # ─────────────────────────────────────────────────────────────
 
 LOCATIONS_SEATTLE = [

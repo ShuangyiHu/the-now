@@ -16,23 +16,19 @@ from content.locations import (
 
 from content.life_scripts import (
     LIFE_SCRIPT_LOVE,
-    LIFE_SCRIPT_GENERAL,
-    LIFE_SCRIPT_INTERVIEW,
+    LIFE_SCRIPT_WORK,
 )
 
 from content.scene_banks import (
     # Scene banks
     SCENE_BANK_LOVE,
-    SCENE_BANK_GENERAL,
-    SCENE_BANK_INTERVIEW,
+    SCENE_BANK_WORK,
     # Order signals
     ORDER_SIGNALS_LOVE,
-    ORDER_SIGNALS_GENERAL,
-    ORDER_SIGNALS_INTERVIEW,
+    ORDER_SIGNALS_WORK,
     # Affirmation themes
     AFFIRMATION_THEMES_LOVE,
-    AFFIRMATION_THEMES_GENERAL,
-    AFFIRMATION_THEMES_INTERVIEW,
+    AFFIRMATION_THEMES_WORK,
     # Time-of-day config
     PERIOD_ENERGY,
     PERIOD_EMOJI,
@@ -41,9 +37,8 @@ from content.scene_banks import (
 
 from content.flavors import (
     MESSAGE_FLAVORS,
-    GENERAL_FLAVOR_INDICES,
     LOVE_FLAVOR_INDICES,
-    INTERVIEW_FLAVOR_INDICES,
+    WORK_FLAVOR_INDICES,
     CRAFT_RULES,
     TOOL_INSTRUCTIONS,
 )
@@ -55,29 +50,24 @@ __all__ = [
     "LOCATIONS_ALL",
     # life scripts
     "LIFE_SCRIPT_LOVE",
-    "LIFE_SCRIPT_GENERAL",
-    "LIFE_SCRIPT_INTERVIEW",
+    "LIFE_SCRIPT_WORK",
     # scene banks
     "SCENE_BANK_LOVE",
-    "SCENE_BANK_GENERAL",
-    "SCENE_BANK_INTERVIEW",
+    "SCENE_BANK_WORK",
     # order signals
     "ORDER_SIGNALS_LOVE",
-    "ORDER_SIGNALS_GENERAL",
-    "ORDER_SIGNALS_INTERVIEW",
+    "ORDER_SIGNALS_WORK",
     # affirmation themes
     "AFFIRMATION_THEMES_LOVE",
-    "AFFIRMATION_THEMES_GENERAL",
-    "AFFIRMATION_THEMES_INTERVIEW",
+    "AFFIRMATION_THEMES_WORK",
     # time-of-day
     "PERIOD_ENERGY",
     "PERIOD_EMOJI",
     "PERIOD_HOURS",
     # flavors
     "MESSAGE_FLAVORS",
-    "GENERAL_FLAVOR_INDICES",
     "LOVE_FLAVOR_INDICES",
-    "INTERVIEW_FLAVOR_INDICES",
+    "WORK_FLAVOR_INDICES",
     "CRAFT_RULES",
     "TOOL_INSTRUCTIONS",
 ]

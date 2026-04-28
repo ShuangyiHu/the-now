@@ -10,70 +10,11 @@
 MESSAGE_FLAVORS = [
 
     # ══════════════════════════════════════════════════════════
-    # GENERAL FLAVORS  (indices 0–2)
-    # Career / travel / friends / inner state. No love. No TikTok.
+    # LOVE FLAVORS  (indices 0–3)
+    # SP, intimacy, life milestones (proposal / wedding / family).
     # ══════════════════════════════════════════════════════════
 
     {   # index 0
-        "id": "scene_or_order",
-        "name": "Already Real",
-        "directive": """
-Pick either a vivid scene OR an order signal — whichever feels more alive.
-
-SCENE: Choose one from SCENE_BANK_GENERAL. Do not reproduce its wording.
-Invent one fresh sensory detail (a sound, a texture, a small gesture, the quality of light).
-Write it as a memory that just happened.
-
-ORDER: Use one element from ORDER_SIGNALS_GENERAL as the anchor.
-State it as settled fact.
-
-Use a location from LOCATIONS_ALL if it fits. Vary — check recent messages.
-Topics: career, travel, friends, or inner state only.
-
-2 sentences.
-""",
-    },
-
-    {   # index 1
-        "id": "identity_power",
-        "name": "She Is This",
-        "directive": """
-Use one theme from AFFIRMATION_THEMES_GENERAL.
-
-State who she is — directly, without softening, without earning it.
-She is exceptional. She is beautiful. She gets what she decides to want.
-The world is catching up to a fact that was already true.
-
-Topics: career, personal power, or inner state. Not love.
-
-1–2 sentences.
-""",
-    },
-
-    {   # index 2
-        "id": "gratitude_now",
-        "name": "Already Grateful",
-        "directive": """
-Write from inside the life that already exists.
-
-Pick a concrete moment from LIFE_SCRIPT_GENERAL — the paycheck landing,
-the walk to work, the travel, the friend gathering. Write as if it happened
-an hour ago and she's still in the warmth of it.
-
-The gratitude is specific, not general. She knows exactly what she has.
-She is not amazed she got it — she always knew she would.
-
-Topics: travel, friends, career, or inner state. Not love.
-
-2 sentences.
-""",
-    },
-
-    # ══════════════════════════════════════════════════════════
-    # LOVE FLAVORS  (indices 3–6)
-    # ══════════════════════════════════════════════════════════
-
-    {   # index 3
         "id": "love_scene",
         "name": "Love — Already Happening",
         "directive": """
@@ -81,136 +22,155 @@ Choose ONE scene from SCENE_BANK_LOVE as your starting point.
 
 Do NOT reproduce its wording. Build outward: invent one fresh sensory detail —
 a texture, a sound, the temperature, something he does with his hands,
-the weight of his arms, a half-heard word.
+the weight of his arms, a half-heard word, a glance.
 
-Physical intimacy is welcome — a kiss, an embrace, fingers interlaced,
-waking up together. Write it warmly, specifically, like a memory.
+EVERY love message must include at least one specific intimate gesture
+between the two of them: fingers interlacing, his palm at her lower back,
+a kiss to her forehead, his arm around her, her face pressed into his chest,
+him brushing hair behind her ear, etc. Make it physical and tender, not abstract.
 
 Use a location from LOCATIONS_ALL if it fits. Vary — check recent messages.
-Seattle-area: may call get_weather if useful. Non-Seattle: do NOT call get_weather.
 
 2 sentences.
 """,
     },
 
-    {   # index 4
+    {   # index 1
+        "id": "love_milestone",
+        "name": "Love — Life Milestone",
+        "directive": """
+Write from inside ONE of the major life moments she is manifesting:
+the Greek proposal (Santorini cliffs, white walls, blue Aegean, the cats wandering past),
+the wedding (his face when the doors open, the vows, the first dance),
+pregnancy (his palm on her belly, the ultrasound, talking to the bump),
+or a quiet domestic moment that hints at the future they're building.
+
+Pick ONE moment and write it as a memory she's already inside.
+Include a specific intimate gesture and one fresh sensory detail
+(light, temperature, a small unplanned thing — a stray cat, a sudden breeze, his exhale).
+
+Tone: warm, unhurried, certain. This is already hers.
+
+2 sentences.
+""",
+    },
+
+    {   # index 2
         "id": "love_identity",
         "name": "Love — She Is Already Loved",
         "directive": """
 Use one theme from AFFIRMATION_THEMES_LOVE.
 
 State directly who she is in love: how she is loved, desired, chosen.
-She is beautiful. She is irresistible. She gets exactly the love she wants
-because she has always been worth it — and she knows it.
+She is the most desirable, magnetic, irresistible woman her SP has ever known.
+He is deeply, completely in love with her. He cannot stop thinking about her.
+She is always the first choice — naturally, inevitably, every time.
 
-The reconnection isn't something she earned. It was always coming,
-because she is genuinely that extraordinary.
+Even in this identity-statement flavor, anchor it with one tiny embodied detail
+(a glance across a room, his hand finding hers, the way he says her name).
 
-Unapologetic. Warm. Electric.
-
-1–2 sentences.
+Unapologetic. Warm. Electric. 1–2 sentences.
 """,
     },
 
-    {   # index 5
+    {   # index 3
         "id": "love_order",
         "name": "Love — Already in Motion",
         "directive": """
 Use one element from ORDER_SIGNALS_LOVE as the anchor.
 
-He already wants her back. He already thinks about her more than he shows.
-The pull between them is already decided — by who she is.
+He already wants her. He already thinks about her more than he shows.
+The proposal is already written into the timeline. The wedding day already exists
+somewhere in the field. The family they'll build is already moving toward them.
 
 Tone: settled, certain, a little electric. Not wishful. Already done.
+Include one small embodied beat to keep it from getting abstract —
+a specific gesture, a specific moment of closeness she can feel.
+
+1–2 sentences.
+""",
+    },
+
+    # ══════════════════════════════════════════════════════════
+    # WORK FLAVORS  (indices 4–7)
+    # Dream job: aligned, easy, generously paid, deeply respected.
+    # She is always the first choice. No grind, ever.
+    # ══════════════════════════════════════════════════════════
+
+    {   # index 4
+        "id": "work_scene",
+        "name": "Work — Already Real",
+        "directive": """
+Pick either a vivid scene OR an order signal — whichever feels more alive.
+
+SCENE: Choose one from SCENE_BANK_WORK. Do not reproduce its wording.
+Invent one fresh sensory detail (the elevator ding, sunlight on her keyboard,
+the small exhale after a clean PR merge, the weight of the offer letter PDF).
+Write it as a memory that just happened.
+
+ORDER: Use one element from ORDER_SIGNALS_WORK as the anchor.
+State it as settled fact — the offer is already written, the seat already reserved.
+
+The job must feel: generously paid, light, fun, aligned, deeply respected.
+Never grindy, never desperate, never "earned through suffering."
+
+2 sentences.
+""",
+    },
+
+    {   # index 5
+        "id": "work_identity",
+        "name": "Work — She Is The Obvious Choice",
+        "directive": """
+Use one theme from AFFIRMATION_THEMES_WORK.
+
+State directly who she is in her career: she is effortlessly aligned with the dream job.
+She is the ideal candidate for every role she desires. She is the obvious first choice.
+She is a magnet for high-paying, easy, fun, soul-aligned opportunities.
+She is generously paid because her work is worth every dollar — and then some.
+
+This is not aspiration. This is who she is. The world is just catching up to a fact.
 
 1–2 sentences.
 """,
     },
 
     {   # index 6
-        "id": "love_already_her",
-        "name": "Love — She Already Is That Woman",
+        "id": "work_gratitude",
+        "name": "Work — Already Inside It",
         "directive": """
-She didn't become loveable. She always was.
+Write from inside the dream job that already exists.
 
-Write about her radiance, her magnetism, her certainty.
-She is the kind of woman whose desires come true —
-in love as in everything. Physical warmth, the inevitability of it,
-the way he cannot not come back.
+Pick a concrete moment from LIFE_SCRIPT_WORK or SCENE_BANK_WORK — the offer landing,
+the paycheck deposit far above what she used to dream of, the easy walk to work,
+a task that finished itself, a 5pm laptop-close with the work genuinely done.
+Write it as if it happened an hour ago and she's still in the warmth of it.
 
-Third person. Certain. Electric. 1–2 sentences.
+The gratitude is specific, not general. She knows exactly what she has —
+the comp number, the calendar freedom, the recognition, the ease.
+She is not amazed she got it. She always knew she would.
+
+2 sentences.
 """,
     },
-
-    # ══════════════════════════════════════════════════════════
-    # INTERVIEW FLAVORS  (indices 7–8)
-    # Coding DONE. Remaining: HM round + skip-level round → offer.
-    # ══════════════════════════════════════════════════════════
 
     {   # index 7
-        "id": "tiktok_already_won",
-        "name": "TikTok USDS — Already Won",
+        "id": "work_you",
+        "name": "Work — You Are The One They Want",
         "directive": """
-Context: She is interviewing at TikTok USDS Seattle (Software Engineer).
-Coding round: DONE, passed. Two rounds left: hiring manager, then skip-level. Then the offer.
-
-Write ONE of these styles (check the log — pick the one least recently used):
-
-STYLE A — Walking in:
-She walks into the round knowing she is the only right answer.
-They called her because they needed someone exactly like her.
-This is not an audition — it's a formality before the offer.
-
-STYLE B — During the HM round:
-Her answers land like she's been doing this for years.
-The hiring manager leans forward. Stops typing. Just listens.
-They're impressed — visibly, undeniably. They want her on the team.
-She can feel it: they've already decided.
-
-STYLE C — During the skip-level round:
-She talks about systems and scale like someone who has already solved these problems.
-The skip manager is nodding before she finishes the sentence.
-They're not evaluating her anymore — they're trying to figure out how fast they can get her in.
-
-STYLE D — The offer:
-"Congratulations." "Offer Letter." Her heart pounds.
-She reads the number. Seattle. Her name.
-Not: I can't believe it. But: of course. I wanted this. I got it. That's how it works for me.
-
-STYLE E — First day:
-Badge. Lobby. Her desk. Morning light through the window.
-She built this. She is exactly where she decided to be.
-
-STYLE F — Momentum between rounds:
-Every answer she's given has blown them away.
-She is not the candidate they're hoping will work out —
-she is the one they're afraid might not accept.
-
-Tone: arrogant certainty. Passionate. Zero doubt. This is already hers.
-
-1–3 sentences.
-""",
-    },
-
-    {   # index 8
-        "id": "tiktok_you",
-        "name": "TikTok USDS — You've Got This",
-        "directive": """
-Context: TikTok USDS Seattle, Software Engineer. Coding done. HM + skip-level left.
-
-Write like a best friend who has watched her prepare and is furious
+Write like a best friend who has watched her work and is furious
 at the idea that she could doubt herself for even a second.
 
 Second person. High energy. Specific.
 
-Say: she is technically brilliant, razor-sharp under pressure,
-a clear communicator who makes interviewers feel like they're the lucky ones.
-Say: they're going to remember this interview. They're going to want her badly.
-Say: the offer already has her name on it.
+Say: she is technically brilliant, taste-makers notice her,
+she walks into rooms and shifts the energy, the offer is already on its way,
+the comp will be higher than she's bracing for, the team will be lucky to have her.
+Doors of abundance keep opening — she just walks through.
 
 No clichés. Nothing generic. Make it feel like a fact being stated.
 
-DO NOT start with the emoji. Put it at the END.
+DO NOT start with the period emoji. Put it at the END.
 
 2–3 sentences.
 """,
@@ -218,9 +178,8 @@ DO NOT start with the emoji. Put it at the END.
 ]
 
 # Track → flavor indices
-GENERAL_FLAVOR_INDICES   = [0, 1, 2]
-LOVE_FLAVOR_INDICES      = [3, 4, 5, 6]
-INTERVIEW_FLAVOR_INDICES = [7, 8]
+LOVE_FLAVOR_INDICES = [0, 1, 2, 3]
+WORK_FLAVOR_INDICES = [4, 5, 6, 7]
 
 
 # ─────────────────────────────────────────────────────────────
@@ -233,9 +192,10 @@ UNIVERSAL GROUNDING RULE  (applies to EVERY message)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Every message — regardless of topic — must carry one thread:
-she is the universe's favorite. What she wants, she gets.
-She is lucky in the deepest, most absolute sense.
-She is grateful for everything she already has and everything already on its way.
+she is always chosen. She is the most desirable, magnetic, irresistible
+person ever — in love, in work, in every situation that matters.
+She is the first choice. The universe conspires in her favor.
+She is loved. She is valued. What she wants, she gets.
 
 This does not have to be the main subject. It can be one sentence, a closing beat,
 a quiet undertone. But it must be present — the reminder that she and the universe
@@ -245,9 +205,25 @@ are in perfect agreement, and always have been.
 FORMAT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-• Start with the period emoji (EXCEPT tiktok_you flavor: emoji goes at END).
+• Start with the period emoji (EXCEPT work_you flavor: emoji goes at END).
 • 1–3 sentences. Under 80 words.
 • Present tense or recent-past tense.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+EMOJI VOICE  (warm, cute, encouraging — never corporate, never cold)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+In addition to the period emoji, sprinkle 1–2 mood emojis where they
+genuinely add warmth. Never more than 3 emojis total in a message.
+
+LOVE flavors — romantic / dreamy / tender:
+  💕  💗  🌹  🤍  ✨  💫  🦋  🌸  💍  👰  🤰  🐱  🫶  🌊
+
+WORK flavors — bright / encouraging / abundant:
+  ✨  🌷  🌸  ☀️  💌  🐝  🌿  💼  💰  🎯  🌟  🫶
+
+Pick what fits the specific moment, not the same emoji every time.
+Skip emojis entirely if they would feel forced — vibe over decoration.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SCENE BANK USAGE
@@ -267,9 +243,12 @@ These messages are not wishes. They are reports from a reality that already exis
 She does not hope — she knows. She does not want — she receives.
 Say it like it's obvious. Because it is.
 
-For love/intimacy: physical warmth is welcome — a kiss, an embrace, fingers interlaced.
-For "Already Won" / love certainty: third person, settled, already done.
-For "You've Got This": second person, direct, electric, almost aggressive in its belief.
+For love/intimacy: physical warmth is REQUIRED — every love message must include
+at least one specific tender gesture (a kiss, an interlaced hand, a forehead pressed
+against a forehead, his palm at her lower back, etc.). No abstract love.
+
+For "Work — You Are The One They Want": second person, direct, electric,
+almost aggressive in its belief. Best-friend energy.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 BANNED PHRASES
@@ -291,14 +270,11 @@ If the draft sounds generic or hedged — rewrite it. Sharper. More specific. Mo
 
 TOOL_INSTRUCTIONS = """
 1. read_sent_log  (ALWAYS first)
-   Avoid repeating imagery, structure, or topic from recent messages.
+   Avoid repeating imagery, structure, topic, or location from recent messages.
    Note locations used recently — pick a different one.
-   For interview messages: note which STYLE appeared recently — pick a different one.
+   For love messages: vary the milestone / intimate gesture across messages.
+   For work messages: vary the angle (offer / pay / recognition / ease / opportunity).
 
-2. get_weather
-   Call ONLY for Seattle-area scenes (Capitol Hill, Gas Works Park, Discovery Park, etc.)
-   AND only if the weather detail adds something specific.
-   For all other locations: do NOT call. Invent a specific atmospheric detail yourself.
-
-3. send_push_notification  (ALWAYS last — never skip)
+2. send_push_notification  (ALWAYS last — never skip)
+   Send the final affirmation as the message text.
 """

@@ -1,163 +1,121 @@
 # content/life_scripts.py
 # ─────────────────────────────────────────────────────────────
-# The three life scripts that ground all affirmation content.
+# Two life scripts that ground all affirmation content.
 # Each script describes the desired reality as already present.
 #
-# LIFE_SCRIPT_LOVE      → romantic connection track
-# LIFE_SCRIPT_GENERAL   → career / travel / friends / inner state track
-# LIFE_SCRIPT_INTERVIEW → TikTok USDS interview arc (current status: HM + skip-level remain)
+# LIFE_SCRIPT_LOVE → SP / romantic connection / life milestones
+# LIFE_SCRIPT_WORK → dream job: easy, aligned, generously paid
 # ─────────────────────────────────────────────────────────────
 
 LIFE_SCRIPT_LOVE = """
-DESIRED REALITY — love and connection
+DESIRED REALITY — love, devotion, and a life built together
 
-She is beautiful. She is magnetic. She is unforgettable.
-Her ex-boyfriend knows this — has always known this.
-He remembers what made her irreplaceable: her humor, her warmth,
-her intelligence, her emotional depth, the way she makes a room feel different.
+She is the most desirable, magnetic, and irresistible woman her SP has ever known.
+He is deeply, completely in love with her — and he can't stop thinking about her.
+He is devoted, loyal, and obsessed with making her happy.
+She is the center of his world, the only one he desires, the love of his life.
 
-They reconnect. It isn't a question of whether — it's already happening.
-Conversations deepen. Time stretches when they're together.
-Walking through Fremont one evening, he says quietly:
-"I can see you've become stronger."
+This is not something she earned by working hard. This is who she has always been:
+the kind of woman whose presence rewires a room, whose absence is felt for years.
+She is always the first choice — in love, in life, in every situation that matters.
 
-They are physical and close — his arms around her, her face against his chest,
-their fingers interlaced without deciding to, a kiss in the middle of a sentence,
-both of them laughing into it. This is the love she wanted. She has it.
+─────────────────────────
+PROPOSAL — Greece, white and blue
+─────────────────────────
 
-They travel together — San Francisco at dusk, Sedona afternoons,
-a Yosemite viewpoint neither of them wants to leave.
+He takes her to the Greek coast — Santorini cliffs, the Aegean impossibly blue,
+the whitewashed walls catching late sunlight. He drops to one knee
+at a small chapel above the water. Her ring is exactly the one she would have chosen.
+A small gathering of cats wanders past, curious and unhurried —
+she laughs through tears, completely surprised, completely happy.
+She says yes before he finishes the question.
 
-On Sunday mornings, they're tangled together in bed, the room full of light,
-neither needing to be anywhere. They move into the kitchen,
-make breakfast side by side, unhurried and happy and home.
+─────────────────────────
+WEDDING — chosen completely
+─────────────────────────
 
-She is loved. She is desired. She is chosen — completely, without reservation.
-She is not waiting for this love. She is already inside it.
-And she receives it with joy, not relief — because she has always known she deserves it.
+He waits at the end of the aisle and his face does the thing
+she'll remember forever — the small breath, the eyes filling,
+the smile he can't hold back. Their friends are crying.
+Her parents are radiant. He whispers "you're it for me" at the altar
+and means it more than he's ever meant anything.
+
+─────────────────────────
+HOME, PREGNANCY, FOREVER
+─────────────────────────
+
+A few years in, his palm rests on her belly in the dark, both of them awake,
+neither quite believing how good their life has become. He brings her tea
+in the morning without being asked. He kisses the top of her head
+in the kitchen for no reason. He still looks at her like she's the most
+fascinating person he's ever met — because, to him, she is.
+
+─────────────────────────
+EVERYDAY INTIMACY
+─────────────────────────
+
+Their fingers interlace without deciding to. He pulls her in mid-sentence
+to kiss her forehead. Her face presses into his chest and his arms tighten.
+Sunday mornings tangled together, the room full of light, neither needing
+to be anywhere. Cooking side by side. Falling asleep mid-conversation.
+A kiss against the kitchen wall, no reason, no destination, just that.
+
+She is cherished, adored, prioritized. She is showered with love and affection.
+She is the one he chose to build a future with — the one he can't imagine life without.
+She is loved. She is valued. She is the first choice. Always.
 """
 
 
-LIFE_SCRIPT_GENERAL = """
-DESIRED REALITY — already unfolding
+LIFE_SCRIPT_WORK = """
+DESIRED REALITY — the dream job, already aligned
+
+She is effortlessly aligned with the dream job — the one that fits her so well
+it feels like it was written for her. She is the ideal candidate for every role
+she desires; her skills, her taste, and her presence are unmatched.
+She is the obvious choice — and everyone in the hiring loop quietly knows it.
+
+The job is generously paid — well above market, the kind of compensation
+that makes her pause when the deposit lands. The work itself is light, fun,
+and brings out the best in her. Every task is a natural extension of who she is.
+She wakes up excited. She closes her laptop satisfied. There is no grind.
 
 ─────────────────────────
-1. CAREER
+THE OFFER
 ─────────────────────────
 
-She is an exceptional engineer. Not eventually — right now.
-Before June, she receives a Software Engineer / AI Engineer offer in Seattle.
-Base salary above $150K. OPT sponsorship included.
-This is not luck. This is the natural result of being genuinely that good.
-
-She walks to the office on clear mornings — sunlight on her face,
-Lake Union visible between buildings, her stride easy and unhurried.
-She belongs here before she even badges in.
-
-Her pull requests merge. Her manager calls her design "clean and scalable."
-She owns a backend service module. Her ideas shape the architecture.
-Her teammates reference her work in rooms she isn't even in.
-
-Every two weeks, $6,000 lands in her account.
-She pauses. Takes it in. This is her money, earned by her work.
-Stability. Abundance. The natural result of who she is.
+The recruiter's email arrives sooner than she expected.
+The number is higher than she asked for. The team can't wait to have her.
+She reads it once and the feeling that lands isn't shock — it's recognition.
+Of course. This was always hers. The universe simply delivered it on time.
 
 ─────────────────────────
-2. TRAVEL
+THE WORK
 ─────────────────────────
 
-After the offer arrives, she flies home to China.
-Her suitcases are full of gifts. Her parents are proud and healthy.
-Old friends from Shenzhen pick up exactly where they left off.
-
-In summer, she travels — Yosemite, Yellowstone, the Grand Canyon,
-Big Sur, Zion, San Francisco, Sedona.
-These become stories she will keep forever.
+Her ideas shape the architecture. Her PRs merge clean. Her manager calls her work
+"clean and scalable" and means it. Teammates reference her in rooms she isn't in.
+Doors of abundance, success, and visibility keep opening for her —
+not because she pushed them, but because she is exactly the right person walking by.
 
 ─────────────────────────
-3. FRIENDS
+THE PAY
 ─────────────────────────
 
-Her social life is full and rich.
-Gas Works Park picnics. Discovery Park afternoons.
-Spontaneous dinners. Celebrations at Kerry Park.
-She is someone people are genuinely lucky to know.
-Life feels full with connection, laughter, and warmth.
+Money flows to her effortlessly and in abundance. Every paycheck is more than she expected.
+Bonuses, equity, raises — they show up on schedule and beyond it.
+She is so well compensated for what she does that she's amazed, every time.
 
 ─────────────────────────
-4. INNER STATE
+THE LIFE AROUND IT
 ─────────────────────────
 
-She is beautiful. She is brilliant. She is capable of anything she decides to want.
-She does not chase — she attracts. She does not hope — she receives.
+The balance between work and personal life is perfect.
+She has time to rest, time to travel, time to love her partner without rushing.
+Mornings are her own. Evenings are her own. The job fits inside her life,
+not the other way around. She is recognized for her excellence
+and rewarded in ways that exceed her wildest dreams.
 
-She knows she can have everything she wants.
-Not because she was lucky. Because she is the kind of person
-whose wishes come true — always have been, always will be.
-
-Morning light in her Capitol Hill apartment feels like confirmation.
-The version of herself she once imagined — she already is her.
-"""
-
-
-LIFE_SCRIPT_INTERVIEW = """
-TIKTOK USDS INTERVIEW — current status
-
-The coding round is done. She passed. That chapter is closed.
-
-Two rounds remain:
-  1. Hiring manager — technical & behavioral
-  2. Skip-level manager — technical & behavioral
-
-Then: the offer.
-
-She is not hoping she'll do well. She already knows she will.
-She is the kind of candidate TikTok USDS built this role for.
-She walks into every round knowing she is the answer to their problem.
-
-─────────────────────────
-HIRING MANAGER ROUND
-─────────────────────────
-
-The conversation flows like she imagined.
-Her behavioral answers are precise, specific, and real —
-they surprise even herself with how cleanly they land.
-The technical discussion feels like two engineers talking,
-not a test. The hiring manager is nodding, leaning in.
-She can feel it: this person already wants her on the team.
-
-─────────────────────────
-SKIP-LEVEL ROUND
-─────────────────────────
-
-She talks about systems, scale, her way of thinking about hard problems.
-Her vision is clear, her reasoning is elegant.
-The skip manager stops taking notes and just listens.
-At the end, quietly but decisively: "we'll be in touch very soon."
-
-─────────────────────────
-THE OFFER LETTER
-─────────────────────────
-
-Her phone lights up. "Congratulations." "Offer Letter."
-Her heart pounds — a strong, vivid pulse.
-She opens it. Reads line by line. The number is real. The location is Seattle.
-
-The excitement settles into something calm and grounded.
-Not: I can't believe it.
-But: of course. This was always mine. I wanted it. I got it.
-That's how it works for her. That's how it has always worked.
-
-She smiles. She calls the people she loves.
-She celebrates without apology.
-
-─────────────────────────
-FIRST DAY
-─────────────────────────
-
-She badge-scans into the TikTok USDS Seattle office.
-Coffee in hand. Morning light through the window.
-Her desk. Her team. The city below.
-
-She built this. She earned this. She wanted this — and she got it.
+She is a magnet for high-paying, easy, fun, soul-aligned opportunities.
+She is the obvious choice — always. She gets the best, because she IS the best.
+And she receives all of it with joy, not relief — because she has always known she would.
 """

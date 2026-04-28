@@ -13,11 +13,34 @@
 # ═════════════════════════════════════════════════════════════
 
 # ── LOVE ──────────────────────────────────────────────────────
-# Romantic connection, physical intimacy, being seen and chosen.
+# Romantic connection with SP, physical intimacy, life milestones
+# (proposal, wedding, pregnancy), and the everyday tenderness of
+# being deeply chosen.
 
 SCENE_BANK_LOVE = [
 
-    # Physical intimacy
+    # ── Greek proposal (signature scene) ──
+    "the Santorini proposal — whitewashed walls, the Aegean impossibly blue, him on one knee at a small clifftop chapel, a handful of curious cats wandering past as she says yes",
+    "the moment in Greece when he reaches for the ring, and a tiny black-and-white kitten brushes against her ankle as if it knows what's happening",
+    "Oia at golden hour, the caldera below, him whispering that he picked this place because it looked the way she makes him feel",
+    "the boat ride to the chapel before the proposal — the wind in her hair, his hand at the small of her back, the future already pulling them in",
+    "after she says yes — sitting on the warm stone steps, the ring catching the sun, two stray cats curled near her sandals",
+
+    # ── Wedding ──
+    "him at the end of the aisle when the doors open — the small breath, the eyes filling, the smile he can't hold back",
+    "their first dance — her cheek against his shoulder, his hand spread across her lower back, the room dissolving",
+    "the altar moment — him whispering 'you're it for me' against her ear, both of them barely holding it together",
+    "her father walking her down the aisle, and the look between her father and her SP when he hands her over",
+    "the kiss after the vows — long enough that the room laughs, neither of them caring",
+
+    # ── Pregnancy / future family ──
+    "his palm spread across her belly in the dark, both of them awake, neither quite believing how good their life has become",
+    "the ultrasound moment — his free hand finding hers without looking, his thumb running over her knuckles",
+    "him talking to her belly in the kitchen, low and serious, telling the baby everything they're going to do together",
+    "her catching him at the nursery window late at night, just standing there looking at the empty crib like he can already see who'll fill it",
+    "a quiet Saturday — her on the couch, his head on her stomach, headphones in, listening",
+
+    # ── Physical intimacy / signature gestures ──
     "their fingers interlacing naturally, without either of them deciding to, walking through Fremont at dusk",
     "him pulling her into a kiss without warning, mid-sentence, both of them laughing into it",
     "her face pressed into his chest, his arms around her, neither of them moving for a long moment",
@@ -28,113 +51,107 @@ SCENE_BANK_LOVE = [
     "their hands interlaced across the table at dinner, both of them talking to other people, holding on anyway",
     "a slow kiss against the wall of the Capitol Hill apartment, no reason, no destination, just that",
     "falling asleep mid-conversation, her head on his shoulder, him not moving so she can stay",
+    "him brushing a strand of hair behind her ear and forgetting what he was saying",
+    "her hand finding his under the blanket at 3am, neither of them awake enough to talk, just enough to hold on",
+    "him kissing the inside of her wrist before letting go of her hand, every single time",
+    "her sitting on the kitchen counter while he cooks, his hand on her knee whenever he passes",
+    "him pulling her in by the waist as she walks past, just to slow her down for a kiss",
 
-    # Seattle
+    # ── Seattle daily life together ──
     "an evening walk together through Capitol Hill, the neighborhood alive around them, neither in a hurry",
     "him noticing something about her that she thought no one saw — saying it simply, at Kerry Park",
-    "sitting on the Gas Works lawn, not talking much, the lake moving below them",
+    "sitting on the Gas Works lawn together, not talking much, the lake moving below them",
     "walking the Discovery Park bluff trail, the Sound wide ahead, him slowing his pace to match hers",
     "catching his eye across a crowded Capitol Hill bar, something passing between them wordlessly",
+    "the South Lake Union walk home from dinner, his arm around her shoulders, the city quiet enough",
 
-    # Travel
+    # ── Travel together ──
     "standing at a Yosemite viewpoint together, the valley below, neither of them speaking for a long moment",
     "fog coming through the Golden Gate at dusk, San Francisco glittering below, him standing close",
     "a Sedona afternoon — red rocks glowing, the sky too blue, both of them unhurried",
     "the Grand Teton reflection in the lake, broken by wind, him pointing to something she almost missed",
     "Big Sur — pulled over on Highway 1, the ocean enormous below them, the moment belonging to no one else",
+    "Mykonos at midnight — windmills, a glass of wine each, his hand finding hers without either of them looking",
+    "a Sunday in Paris that turned into nothing planned, him following her into every bookshop",
 
-    # Domestic / quiet intimacy
+    # ── Domestic / quiet intimacy ──
     "a slow Sunday morning in bed, close and warm, neither of them needing to be anywhere",
     "moving to the kitchen together after a slow morning, sunlight in, making breakfast side by side",
-    "a lazy Sunday afternoon back home — games, small moments that need no commentary",
+    "a lazy Sunday afternoon back home — small moments that need no commentary",
     "him asking something real about her day and actually waiting for the answer",
     "the feeling of being chosen — quietly, without drama, without needing to ask",
-    "losing badly at a game with his friends and laughing anyway, all of them laughing",
+    "him bringing her tea in the morning without being asked, every morning",
+    "the way he looks at her across the room when she doesn't know he's looking",
+    "him saying her name in the dark like it's the only word he needs",
     "walking through Fremont in the evening, him saying quietly: 'I can see you've become stronger'",
+    "him texting her in the middle of the day for no reason except that he was thinking about her",
 ]
 
 
-# ── GENERAL ───────────────────────────────────────────────────
-# Career, friends, travel, inner state. No romantic content.
+# ── WORK ──────────────────────────────────────────────────────
+# The dream job: aligned, easy, generously paid, deeply respected.
+# She is always the first choice. Doors of abundance keep opening.
 
-SCENE_BANK_GENERAL = [
+SCENE_BANK_WORK = [
 
-    # Career
-    "arriving at the South Lake Union office, badge in hand, the lobby quiet in the morning",
+    # ── The offer arriving ──
+    "the recruiter's email landing in her inbox — the offer number higher than she even asked for",
+    "opening the offer letter on her couch, reading the comp line by line, the calm 'of course' settling in",
+    "the call from the hiring manager: 'we'd love to make this work — what would it take?'",
+    "the moment she realizes three companies are competing for her at once, all of them above her old number",
+    "the second email of the week from a recruiter who has clearly studied her work before reaching out",
+
+    # ── The walk to work ──
     "walking to the office on a clear morning, sunlight on her face, her stride easy and unhurried",
-    "the walk to work along Lake Union — fresh air, water visible between buildings, feeling exactly placed",
-    "a PR review that ends with approval — the green checkmark, the brief exhale",
-    "a design meeting where her solution becomes the one the team builds around",
-    "a teammate referencing her work in a discussion she isn't even part of",
-    "shipping something clean and watching it hold — no rollback, no incident",
-    "the paycheck notification — $6,000 appearing in the account, the number settling into her like fact",
-    "pausing at the paycheck deposit, feeling the specific calm satisfaction of money that came from her own work",
+    "the South Lake Union lobby in the morning — her badge in hand, the elevator already feeling like hers",
+    "the Lake Union walk, water visible between buildings, the stride of someone who knows she belongs here",
+    "stepping off the elevator on her floor, the day already feeling effortless",
+    "morning coffee in the office kitchen, casual hellos, the easy belonging of being exactly where she fits",
 
-    # Travel
-    "boarding the flight home, the gate behind her, the destination ahead",
-    "the airport arrivals hall — her family's faces before they see her",
-    "spreading gifts across a table, watching relatives react to each one",
-    "a meal with Shenzhen friends where the years between them simply disappear",
-    "the suitcase packed with gifts, so full it barely closes",
-    "showing her parents the Seattle apartment over FaceTime, turning the camera slowly",
-    "standing at the Yosemite Valley floor, El Capitan filling the sky, nothing urgent anywhere",
-    "the Yellowstone crowd going silent just before the eruption, the anticipation collective",
-    "Zion Narrows — cold water around her ankles, the canyon walls narrowing above her",
-    "the Grand Canyon rim — the first gap in the trees before the full scale of it opens",
-    "Rattlesnake Ledge — the ridge appearing, the lake perfectly still far below, the climb worth it",
+    # ── Light, fun, aligned work ──
+    "a task she finishes before lunch that she expected to take all day — the work just keeps being easier than she planned for",
+    "the moment in a meeting where her one sentence reframes the whole problem and the room shifts",
+    "a design doc that writes itself because she's been thinking this clearly for years",
+    "the satisfaction of a clean PR merging on the first review — the green checkmark, the brief exhale",
+    "an afternoon spent in flow, headphones in, building something she loves, the hours dissolving",
+    "a 1:1 with her manager that turns into laughing about a side project, both of them excited",
 
-    # Friends
-    "a Gas Works Park afternoon with friends, food spread out, nowhere to be",
-    "a dinner that wasn't planned, a restaurant that fit everyone, the table loud",
-    "golden hour in Seattle with friends, everyone a little reluctant to leave",
-    "a group photo taken impulsively — someone says take it, and they do",
-    "a Shenzhen reunion where the conversation picks up mid-sentence from years ago",
-    "the feeling after a good night with people she loves — full, easy, unhurried",
-    "someone in the group saying something that makes everyone lose it simultaneously",
-    "a Discovery Park afternoon with friends, the lighthouse visible at the end of the trail",
+    # ── Recognition / respect ──
+    "her solution becoming the one the team builds around — without her having to push for it",
+    "her teammate referencing her work in a discussion she isn't even part of",
+    "her manager calling her design 'clean and scalable' in front of the whole team",
+    "a senior engineer DM-ing her after the all-hands: 'that idea you proposed — that's the right call'",
+    "skip-level praise landing in her inbox, specific and unprompted",
+    "an unsolicited 'we're so glad you're here' from someone whose opinion she actually respects",
+    "the moment she realizes everyone in the room defers to her on this — quietly, naturally, without it being weird",
 
-    # Inner state
-    "morning light in the Capitol Hill apartment, no alarm, no urgency",
-    "reading by the window while Seattle does its thing outside — being still in it",
-    "waking up and noticing: the tightness is gone, replaced by something open",
-    "a moment mid-day where she looks up and thinks: this is already the life",
-    "noticing her own calm during something that used to make her anxious",
-    "the particular fullness of a day that was ordinary and enough",
-    "standing at Kerry Park at dusk, the skyline below, the sense of belonging to this city",
-    "a solo morning hike on Rattlesnake Ridge — the silence at the top, the whole valley hers",
-]
+    # ── Money / abundance ──
+    "the paycheck notification — the number well above what she used to dream of, settling into her like fact",
+    "a bonus deposit she didn't see coming, landing on a Tuesday for no reason except that they wanted to keep her",
+    "the equity refresh email — the number higher than the original grant, the message warm",
+    "a raise that arrives before she even thought about asking",
+    "her bank balance crossing a threshold she remembers being afraid of a year ago",
+    "pausing at the deposit notification, feeling the specific calm of money that came from her own work",
 
+    # ── Doors opening / opportunity flow ──
+    "an inbound message from a company she'd actually want to work for, written like they've already decided they want her",
+    "a contact reaching out about an advisory role, then another, the calendar getting interesting",
+    "the LinkedIn DMs piling up — recruiters, founders, people wanting her on their thing",
+    "a dream-team conversation that happens because someone she barely knows mentioned her name in the right room",
+    "the realization that the next role isn't a question of finding it — it's a question of choosing among them",
 
-# ── INTERVIEW ─────────────────────────────────────────────────
-# TikTok USDS arc. Coding done. Remaining: HM + skip-level + offer.
+    # ── Work-life balance / freedom ──
+    "closing the laptop at 5pm because the work is genuinely done — not deferred, not avoided, finished",
+    "a Tuesday afternoon walk in the middle of the day because she can, and the work doesn't suffer",
+    "a long weekend she takes without guilt because the team is fine and she's earned it many times over",
+    "morning light in the Capitol Hill apartment, no alarm, no urgency — and a job that pays her like this",
+    "a midweek dinner with him that runs late because nothing about her schedule fights it",
+    "the particular fullness of a workday that was light, productive, and over by dinner",
 
-SCENE_BANK_INTERVIEW = [
-
-    # Hiring manager round
-    "the hiring manager round opening — she's already warmed up, already sharp, nothing left to prove",
-    "the HM asking a behavioral question and her answer surprising even herself with its precision",
-    "the tech discussion with the hiring manager flowing like a conversation between two engineers who think alike",
-    "the moment the HM stops typing notes and just listens — because what she's saying is that good",
-    "the hiring manager round ending, her voice steady, the interviewer's tone warm and decisive",
-
-    # Skip-level round
-    "the skip-level round — showing how she thinks about systems, her vision landing with authority",
-    "the skip manager asking about her approach to scale, her answer unhurried and surgically precise",
-    "the skip-level conversation shifting from interview to genuine dialogue — two people who see the same future",
-    "the final round ending with the skip manager saying: 'we'll be in touch very soon' — and meaning it",
-    "closing the laptop after the skip-level, the apartment quiet, the certainty already settled in her chest",
-
-    # Offer letter
-    "reading the offer letter line by line, the number real, the location Seattle — excitement settling into 'of course'",
-    "the heart beating faster as the offer letter opens, then the deep calm landing: this has always been mine",
-    "the offer letter moment — not surprise, but recognition. A quiet: yes. This.",
-    "the celebration dinner with friends the night the offer arrives — laughter, champagne, disbelief turning into joy",
-    "telling him — his reaction, the moment between hearing it and saying anything",
-
-    # First day
-    "badge scanning into the TikTok USDS office for the first time, coffee in hand",
-    "settling into her new desk, the morning light coming through the window, the city below",
-    "her parents' faces on FaceTime when she tells them, the sound of their voices",
+    # ── Inner state ──
+    "the moment mid-day where she looks up and thinks: this is already the life",
+    "noticing her own calm during something that used to feel like pressure",
+    "the version of herself she once imagined in this exact role — she already is her",
 ]
 
 
@@ -142,37 +159,30 @@ SCENE_BANK_INTERVIEW = [
 # UNIVERSE ORDER SIGNALS
 # ═════════════════════════════════════════════════════════════
 
-ORDER_SIGNALS_GENERAL = [
-    "the right team already has a seat for her",
-    "HR is already preparing the paperwork",
-    "the hiring manager already expects her",
-    "her badge is already printed",
-    "her desk already exists in the office",
-    "her first project is already waiting",
-    "the salary number is already decided",
-    "the team is already making room for her contributions",
-    "the opportunity is already in motion, moving toward her",
-    "the $6,000 is already being processed, two weeks at a time",
-]
-
 ORDER_SIGNALS_LOVE = [
-    "he already knows she's someone he doesn't want to lose",
-    "the reconnection is already in motion, moving in its own quiet way",
-    "the version of her he fell for — he's already remembering her",
-    "the door between them is already open, even if neither has walked through yet",
-    "the right moment for them is already being prepared",
+    "he already knows she's the one — the only one he can imagine a life with",
+    "he already thinks about her more than he lets on, more than he shows",
+    "the proposal is already written into the timeline — the ring already chosen",
+    "the version of her he fell for — he's already remembering, already coming back",
+    "the door between them is already open, the rest is just timing",
     "the Sunday morning that belongs to both of them is already on its way",
-    "he already thinks about her more than he lets on",
+    "her wedding day is already a date in someone's calendar, somewhere in the field",
+    "the family they'll build is already moving toward them",
+    "she is already his first choice — has been for longer than he realized",
+    "the universe has already lined up the love that's coming, exactly the way she wanted it",
 ]
 
-ORDER_SIGNALS_INTERVIEW = [
-    "the TikTok USDS offer is already written — she just hasn't read it yet",
+ORDER_SIGNALS_WORK = [
+    "the dream-job offer is already written — she just hasn't read it yet",
+    "the right team already has a seat reserved for her",
     "the hiring manager already knows she's the one",
-    "the skip-level manager is already expecting someone impressive — and she will be",
-    "the TikTok USDS team already has her name circled",
-    "the offer letter number is already decided in her favor",
-    "the next-steps email confirming her advance is already drafted",
-    "the headcount is already reserved for her",
+    "her badge is already printed, her desk already exists",
+    "the comp number is already decided in her favor — and it's higher than she expected",
+    "the recruiter who'll change her trajectory is already drafting the email",
+    "doors of abundance are already opening — she just walks through",
+    "the high-paying, easy, soul-aligned opportunity is already on its way to her",
+    "she's already been chosen — the paperwork is just catching up",
+    "the universe has already filed the offer; she'll be holding it soon",
 ]
 
 
@@ -182,46 +192,32 @@ ORDER_SIGNALS_INTERVIEW = [
 
 AFFIRMATION_THEMES_LOVE = [
     "irresistibly herself — beautiful, sharp, warm, and impossible to forget",
-    "the kind of woman men remember years later and regret letting go",
-    "someone whose love is a privilege, not a given — and he knows it",
-    "deeply loved, physically desired, and chosen with full certainty",
-    "someone so magnetic that the reconnection was never really a question",
+    "the most desirable, magnetic, and irresistible woman her SP has ever known",
+    "the kind of woman whose presence rewires a room — and whose absence is felt for years",
+    "deeply loved, physically desired, prioritized, and chosen with full certainty",
+    "the love of her SP's life — the only one he desires, the one he can't stop thinking about",
+    "the woman he chose to build a future with — the one he can't imagine his life without",
+    "cherished, adored, prioritized — showered with love and affection without ever asking",
+    "always the first choice in love — naturally, inevitably, every time",
+    "the perfect match, the person he's always dreamed of, finally his",
     "a woman who is strikingly beautiful, wickedly intelligent, and effortlessly warm",
-    "someone who makes him feel more alive just by being in the room",
-    "worthy of a love that is passionate, grounded, chosen, and physical",
-    "someone who gets everything she wants in love — because she deserves it and she knows it",
-    "a woman who can have any love she wants, and she has chosen well",
+    "someone who gets exactly the love she wants — because she is genuinely that worthy of it",
+    "the kind of woman whose love story includes a Greek proposal, a wedding she'll remember forever, and a family that already feels like home",
 ]
 
-AFFIRMATION_THEMES_GENERAL = [
-    # Career / money
-    "a genuinely exceptional engineer — not almost, not someday, right now",
-    "someone who commands $150K+ because her work is worth every dollar",
-    "the kind of engineer teams fight to keep once they have her",
-    "someone whose technical instincts are sharper than most people in the room",
-    "someone who gets the offer because she is simply that good",
-    # Identity / self-concept
-    "beautiful, brilliant, and wildly capable — all three, all at once, always",
-    "someone who gets what she wants because she decides she will",
-    "a person who is lucky in the deepest sense: the right things find her",
-    "someone whose wishes come true — not by accident, but because she is the kind of person they come true for",
-    "unstoppable in the quietest, most certain way",
-    "someone who has always been exceptional — the world is just catching up",
-    # Social / life
-    "someone people are genuinely lucky to know",
-    "someone whose life keeps expanding because she refuses to settle for small",
-    "grounded, radiant, and already living the life — right now, today",
-    "someone who can have anything she wants and feels completely at ease receiving it",
-]
-
-AFFIRMATION_THEMES_INTERVIEW = [
-    "one of the sharpest engineering candidates TikTok USDS will interview this year",
-    "someone who makes interviewers wish the round didn't have to end",
-    "technically brilliant and impossible to rattle under pressure",
-    "the exact profile TikTok USDS built this role for",
-    "someone who walks into that room and immediately shifts the energy",
-    "so prepared, so sharp, so clear — the offer was never in doubt",
-    "someone who doesn't just pass interviews — she makes them memorable",
+AFFIRMATION_THEMES_WORK = [
+    "effortlessly aligned with the dream job — every day feels like play",
+    "the ideal candidate for every role she desires — skills, taste, and presence unmatched",
+    "the obvious first choice — always, in every hiring loop she enters",
+    "a magnet for high-paying, easy, fun, soul-aligned opportunities",
+    "generously paid, deeply respected, and recognized for excellence",
+    "someone whose work is light, joyful, and brings out the best in her",
+    "the kind of engineer companies fight to keep — and pay accordingly",
+    "someone who commands a salary far above market because her work is worth every dollar",
+    "doors of abundance, success, and visibility constantly opening for her",
+    "rewarded in ways that exceed her wildest dreams — bonuses, equity, raises arriving on schedule and beyond it",
+    "thriving in every possible way — career, money, balance, and inner ease",
+    "always chosen for the role she actually wants — never the consolation prize",
 ]
 
 

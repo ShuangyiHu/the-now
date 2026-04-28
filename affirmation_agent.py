@@ -21,31 +21,25 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 
 from config import (
-    WEATHER_LOCATION,
     MAX_LOG_ENTRIES,
     RECENT_FOR_PROMPT,
     LLM_TEMPERATURE,
     LLM_TOP_P,
     LANGUAGE,
     LIFE_SCRIPT_LOVE,
-    LIFE_SCRIPT_GENERAL,
-    LIFE_SCRIPT_INTERVIEW,
+    LIFE_SCRIPT_WORK,
     SCENE_BANK_LOVE,
-    SCENE_BANK_GENERAL,
-    SCENE_BANK_INTERVIEW,
+    SCENE_BANK_WORK,
     ORDER_SIGNALS_LOVE,
-    ORDER_SIGNALS_GENERAL,
-    ORDER_SIGNALS_INTERVIEW,
+    ORDER_SIGNALS_WORK,
     AFFIRMATION_THEMES_LOVE,
-    AFFIRMATION_THEMES_GENERAL,
-    AFFIRMATION_THEMES_INTERVIEW,
+    AFFIRMATION_THEMES_WORK,
     PERIOD_ENERGY,
     PERIOD_EMOJI,
     PERIOD_HOURS,
     MESSAGE_FLAVORS,
     LOVE_FLAVOR_INDICES,
-    GENERAL_FLAVOR_INDICES,
-    INTERVIEW_FLAVOR_INDICES,
+    WORK_FLAVOR_INDICES,
     CRAFT_RULES,
     TOOL_INSTRUCTIONS,
 )
@@ -69,28 +63,26 @@ def get_slot_index(hour: int, minute: int) -> int:
 # ─────────────────────────────────────────────────────────────────────────────
 # Flavor selection — purely time-based, no log counting
 #
-# Slot category (slot_index % 3):
+# Slot category (slot_index % 2):
 #   0  →  LOVE
-#   1  →  GENERAL
-#   2  →  INTERVIEW
+#   1  →  WORK
 #
 # Flavor within category rotates via (slot_index + day_of_year) % n,
 # so the same time slot produces a different flavor on different days.
 # ─────────────────────────────────────────────────────────────────────────────
 
-SLOT_CATEGORY_LOVE      = 0
-SLOT_CATEGORY_GENERAL   = 1
-SLOT_CATEGORY_INTERVIEW = 2
+SLOT_CATEGORY_LOVE = 0
+SLOT_CATEGORY_WORK = 1
 
 
 def get_slot_category(slot_index: int) -> int:
-    return slot_index % 3
+    return slot_index % 2
 
 
 def get_message_flavor(slot_index: int, day_of_year: int) -> tuple[dict, str]:
     """
     Returns (flavor_dict, category_label).
-    category_label is one of: "love", "general", "interview"
+    category_label is one of: "love", "work"
     """
     category = get_slot_category(slot_index)
 
@@ -98,13 +90,9 @@ def get_message_flavor(slot_index: int, day_of_year: int) -> tuple[dict, str]:
         idx = (slot_index + day_of_year) % len(LOVE_FLAVOR_INDICES)
         return MESSAGE_FLAVORS[LOVE_FLAVOR_INDICES[idx]], "love"
 
-    elif category == SLOT_CATEGORY_GENERAL:
-        idx = (slot_index + day_of_year) % len(GENERAL_FLAVOR_INDICES)
-        return MESSAGE_FLAVORS[GENERAL_FLAVOR_INDICES[idx]], "general"
-
-    else:  # SLOT_CATEGORY_INTERVIEW
-        idx = (slot_index + day_of_year) % len(INTERVIEW_FLAVOR_INDICES)
-        return MESSAGE_FLAVORS[INTERVIEW_FLAVOR_INDICES[idx]], "interview"
+    else:  # SLOT_CATEGORY_WORK
+        idx = (slot_index + day_of_year) % len(WORK_FLAVOR_INDICES)
+        return MESSAGE_FLAVORS[WORK_FLAVOR_INDICES[idx]], "work"
 
 
 def get_language() -> dict:
@@ -179,7 +167,7 @@ def get_time_context() -> dict | None:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# System prompt builder — three content pools: love / general / interview
+# System prompt builder — two content pools: love / work
 # ─────────────────────────────────────────────────────────────────────────────
 
 def build_system_prompt(ctx: dict, flavor: dict, category: str) -> str:
@@ -190,35 +178,14 @@ def build_system_prompt(ctx: dict, flavor: dict, category: str) -> str:
         scene_bank         = SCENE_BANK_LOVE
         order_signals      = ORDER_SIGNALS_LOVE
         affirmation_themes = AFFIRMATION_THEMES_LOVE
-        slot_header        = "LOVE SLOT — write about romantic connection and emotional intimacy only."
-        diversity_rule     = ""
+        slot_header        = "LOVE SLOT — write about romantic connection with her SP, intimate gestures, and life milestones (proposal/wedding/family). Always include at least one specific physical/tender gesture."
 
-    elif category == "interview":
-        life_script        = LIFE_SCRIPT_INTERVIEW
-        scene_bank         = SCENE_BANK_INTERVIEW
-        order_signals      = ORDER_SIGNALS_INTERVIEW
-        affirmation_themes = AFFIRMATION_THEMES_INTERVIEW
-        slot_header        = "INTERVIEW SLOT — write about TikTok USDS interview only."
-        diversity_rule     = ""
-
-    else:  # general
-        life_script        = LIFE_SCRIPT_GENERAL
-        scene_bank         = SCENE_BANK_GENERAL
-        order_signals      = ORDER_SIGNALS_GENERAL
-        affirmation_themes = AFFIRMATION_THEMES_GENERAL
-        slot_header        = "GENERAL SLOT — write from: career, travel, friends, or inner state. Not love."
-        diversity_rule     = """
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TOPIC DIVERSITY RULE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-The life script has four areas: CAREER, TRAVEL, FRIENDS, INNER STATE.
-
-After reading the log, identify which area appeared LEAST recently.
-Write about that area.
-
-Do not write about the same area two general messages in a row.
-"""
+    else:  # work
+        life_script        = LIFE_SCRIPT_WORK
+        scene_bank         = SCENE_BANK_WORK
+        order_signals      = ORDER_SIGNALS_WORK
+        affirmation_themes = AFFIRMATION_THEMES_WORK
+        slot_header        = "WORK SLOT — write about her dream job: aligned, light, generously paid, deeply respected. She is always the first choice. No grind, no struggle, no desperation."
 
     scene_list         = "\n".join(f"- {s}" for s in scene_bank)
     order_list         = "\n".join(f"- {s}" for s in order_signals)
@@ -298,10 +265,12 @@ Ensure the new message:
 • Uses different opening words
 • Uses different imagery
 • Uses a different emotional tone
-• Avoids repeating the same scenes
+• Avoids repeating the same scenes, milestones, or gestures
 
-For interview messages: check which STYLE (A/B/C/D/E) appeared recently — pick a different one.
-{diversity_rule}
+For love messages: vary the milestone (proposal / wedding / pregnancy / everyday)
+and vary the intimate gesture (kiss / hand / forehead / embrace / glance).
+For work messages: vary the angle (offer / pay / recognition / ease / opportunity).
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 GOAL
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -329,28 +298,6 @@ def read_sent_log() -> str:
 
 
 @tool
-def get_weather() -> str:
-    """
-    Get current weather. Only use if the detail specifically serves the message.
-    """
-    try:
-        response = requests.get(
-            f"https://wttr.in/{WEATHER_LOCATION}?format=j1",
-            timeout=5
-        )
-        data = response.json()
-        current = data["current_condition"][0]
-        return (
-            f"Current weather in {WEATHER_LOCATION}: "
-            f"{current['weatherDesc'][0]['value']}, "
-            f"{current['temp_F']}°F (feels like {current['FeelsLikeF']}°F), "
-            f"humidity {current['humidity']}%."
-        )
-    except Exception as e:
-        return f"Weather unavailable ({e})."
-
-
-@tool
 def send_push_notification(text: str) -> str:
     """
     Send the final affirmation as a push notification. Always call this last.
@@ -367,7 +314,7 @@ def send_push_notification(text: str) -> str:
     return f"Notification sent (HTTP {response.status_code})"
 
 
-tools = [read_sent_log, get_weather, send_push_notification]
+tools = [read_sent_log, send_push_notification]
 
 
 # ─────────────────────────────────────────────────────────────────────────────

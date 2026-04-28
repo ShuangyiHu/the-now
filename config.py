@@ -7,7 +7,6 @@
 # ─────────────────────────────────────────────────────────────
 
 # ── Agent / log settings ──────────────────────────────────────
-WEATHER_LOCATION  = "Seattle"
 MAX_LOG_ENTRIES   = 80
 RECENT_FOR_PROMPT = 12
 
